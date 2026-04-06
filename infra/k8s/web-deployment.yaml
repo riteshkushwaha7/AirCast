@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myaircast-web
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: myaircast-web
+  template:
+    metadata:
+      labels:
+        app: myaircast-web
+    spec:
+      containers:
+        - name: web
+          image: myaircast-web:latest
+          ports:
+            - containerPort: 3000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: myaircast-web
+spec:
+  selector:
+    app: myaircast-web
+  ports:
+    - port: 80
+      targetPort: 3000

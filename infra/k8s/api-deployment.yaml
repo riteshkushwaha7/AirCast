@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myaircast-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: myaircast-api
+  template:
+    metadata:
+      labels:
+        app: myaircast-api
+    spec:
+      containers:
+        - name: api
+          image: myaircast-api:latest
+          ports:
+            - containerPort: 8000
+          env:
+            - name: APP_ENV
+              value: "production"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: myaircast-api
+spec:
+  selector:
+    app: myaircast-api
+  ports:
+    - port: 80
+      targetPort: 8000

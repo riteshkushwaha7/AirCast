@@ -1,0 +1,22 @@
+{
+  "location_id": "loc-delhi-001",
+  "location_label": "New Delhi, Delhi",
+  "current_aqi": 168,
+  "current_category": "Unhealthy",
+  "forecasts": [
+    { "horizon_hours": 4, "aqi": 176, "category": "Unhealthy" },
+    { "horizon_hours": 6, "aqi": 182, "category": "Unhealthy" },
+    { "horizon_hours": 12, "aqi": 171, "category": "Unhealthy" },
+    { "horizon_hours": 24, "aqi": 159, "category": "Unhealthy" }
+  ],
+  "daily_outlook": [
+    { "day": "Mon", "avg_aqi": 156, "category": "Unhealthy", "trend": "up" },
+    { "day": "Tue", "avg_aqi": 148, "category": "Unhealthy for sensitive users", "trend": "down" },
+    { "day": "Wed", "avg_aqi": 138, "category": "Unhealthy for sensitive users", "trend": "down" },
+    { "day": "Thu", "avg_aqi": 131, "category": "Unhealthy for sensitive users", "trend": "down" },
+    { "day": "Fri", "avg_aqi": 145, "category": "Unhealthy for sensitive users", "trend": "up" },
+    { "day": "Sat", "avg_aqi": 162, "category": "Unhealthy", "trend": "up" },
+    { "day": "Sun", "avg_aqi": 151, "category": "Unhealthy", "trend": "down" }
+  ],
+  "best_outdoor_window": "7:00 AM - 8:30 AM"
+}

@@ -1,0 +1,17 @@
+openapi: 3.0.3
+info:
+  title: My AirCast API Contract (excerpt)
+  version: 0.1.0
+paths:
+  /api/v1/forecast/current:
+    get:
+      summary: Get current AQI and forecast for selected location
+      responses:
+        "200":
+          description: Current + horizons + 7 day outlook
+  /api/v1/alerts/evaluate:
+    post:
+      summary: Evaluate active alert rules for a user/location pair
+      responses:
+        "200":
+          description: Triggered alerts list

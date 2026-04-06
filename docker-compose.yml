@@ -1,0 +1,75 @@
+version: "3.9"
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: infra/docker/frontend.Dockerfile
+    container_name: airwise-web
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+      - frontend/web/.env.local.example
+    depends_on:
+      - api
+
+  api:
+    build:
+      context: .
+      dockerfile: infra/docker/backend.Dockerfile
+    container_name: airwise-api
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+      - backend/api/.env.example
+    depends_on:
+      - postgres
+      - influxdb
+
+  ml-pipeline:
+    build:
+      context: .
+      dockerfile: infra/docker/ml.Dockerfile
+    container_name: airwise-ml
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - influxdb
+    command: ["python", "-m", "src.retrain.schedule", "--config", "config/train_config.yaml"]
+
+  postgres:
+    image: postgres:16
+    container_name: airwise-postgres
+    restart: unless-stopped
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-airwise}
+      POSTGRES_USER: ${POSTGRES_USER:-airwise}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-airwise123}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./seed/postgres_seed.sql:/docker-entrypoint-initdb.d/01-seed.sql
+
+  influxdb:
+    image: influxdb:2.7
+    container_name: airwise-influxdb
+    restart: unless-stopped
+    ports:
+      - "${INFLUXDB_PORT:-8086}:8086"
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: ${INFLUXDB_INIT_MODE:-setup}
+      DOCKER_INFLUXDB_INIT_USERNAME: ${INFLUXDB_INIT_USERNAME:-airwise}
+      DOCKER_INFLUXDB_INIT_PASSWORD: ${INFLUXDB_INIT_PASSWORD:-airwise123}
+      DOCKER_INFLUXDB_INIT_ORG: ${INFLUXDB_INIT_ORG:-airwise}
+      DOCKER_INFLUXDB_INIT_BUCKET: ${INFLUXDB_INIT_BUCKET:-aqi_raw}
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUXDB_INIT_ADMIN_TOKEN:-dev-influx-token}
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+
+volumes:
+  postgres_data:
+  influxdb_data:
