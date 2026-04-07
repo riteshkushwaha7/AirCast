@@ -44,6 +44,18 @@ def _error_payload(exc: AppException) -> dict:
 
 
 def register_exception_handlers(app: FastAPI) -> None:
+    async def http_exception_handler(_: Request, exc: HTTPException) -> JSONResponse:
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "success": False,
+                "error": {
+                    "code": "http_error",
+                    "message": str(exc.detail),
+                },
+            },
+        )
+
     async def app_exception_handler(_: Request, exc: AppException) -> JSONResponse:
         return JSONResponse(status_code=exc.status_code, content=_error_payload(exc))
 
@@ -62,14 +74,3 @@ def register_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(AppException, app_exception_handler)
     app.add_exception_handler(HTTPException, http_exception_handler)
     app.add_exception_handler(Exception, generic_exception_handler)
-    async def http_exception_handler(_: Request, exc: HTTPException) -> JSONResponse:
-        return JSONResponse(
-            status_code=exc.status_code,
-            content={
-                "success": False,
-                "error": {
-                    "code": "http_error",
-                    "message": str(exc.detail),
-                },
-            },
-        )

@@ -1,7 +1,7 @@
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -17,7 +17,12 @@ class Settings(BaseSettings):
     influx_url: str = "http://localhost:8086"
     influx_token: str = "dev-influx-token"
     influx_org: str = "airwise"
-    influx_bucket: str = "aqi_raw"
+    influx_bucket: str = "airwise_timeseries"
+    influx_raw_measurement: str = "aqi_raw"
+    influx_processed_measurement: str = "aqi_processed"
+    influx_predictions_measurement: str = "aqi_predictions"
+    influx_model_metrics_measurement: str = "model_metrics"
+    influx_pollutant_measurement: str = "pollutant_raw"
 
     firebase_project_id: str | None = None
     firebase_client_email: str | None = None
@@ -32,7 +37,43 @@ class Settings(BaseSettings):
 
     default_threshold_aqi: int = Field(default=150, ge=50, le=500)
 
+    source_mock_mode: bool = True
+    cpcb_base_url: str = "https://api.example.cpcb.gov.in"
+    cpcb_timeout_seconds: int = Field(default=20, ge=2, le=120)
+    cpcb_default_limit: int = Field(default=500, ge=50, le=5000)
+
+    openaq_base_url: str = "https://api.openaq.org/v3"
+    openaq_timeout_seconds: int = Field(default=25, ge=2, le=120)
+    openaq_default_limit: int = Field(default=1000, ge=50, le=10000)
+
+    weather_base_url: str = "https://weather.example.com"
+    weather_timeout_seconds: int = Field(default=10, ge=2, le=60)
+
+    processing_resample_frequency: str = "1h"
+    processing_default_lookback_hours: int = Field(default=336, ge=24, le=24 * 90)
+    processing_short_gap_limit_hours: int = Field(default=2, ge=1, le=24)
+    processing_enable_outlier_clipping: bool = True
+    processing_aqi_clip_upper: int = Field(default=500, ge=100, le=2000)
+    processing_missing_strategy: Literal["ffill_then_interp", "interpolate_only", "forward_fill_only"] = "ffill_then_interp"
+    processing_long_gap_keep_missing: bool = True
+
+    dataset_train_ratio: float = Field(default=0.7, ge=0.5, le=0.9)
+    dataset_val_ratio: float = Field(default=0.15, ge=0.05, le=0.4)
+    dataset_test_ratio: float = Field(default=0.15, ge=0.05, le=0.4)
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+
+    @field_validator("debug", mode="before")
+    @classmethod
+    def _normalize_debug(cls, value: bool | str) -> bool:
+        if isinstance(value, bool):
+            return value
+        normalized = value.strip().lower()
+        if normalized in {"1", "true", "yes", "on", "debug", "development"}:
+            return True
+        if normalized in {"0", "false", "no", "off", "release", "prod", "production"}:
+            return False
+        return True
 
 
 @lru_cache

@@ -1,66 +1,81 @@
-# AirWise Backend (Batch 2 Foundation)
+# AirWise Backend API
 
-This backend provides a clean, layered FastAPI architecture for AirWise.
+Production-style FastAPI backend foundation for AirWise.
+
+This batch extends the project with AQI data ingestion and preprocessing services designed for:
+- current AQI retrieval
+- historical backfill
+- time-series preprocessing
+- feature generation for future LSTM training
 
 ## Structure
 ```text
 app/
-  main.py
   api/
-    deps.py
-    router.py
     routes/
+      admin.py
   core/
   db/
-  models/
-  schemas/
-  repositories/
-  services/
   integrations/
-  utils/
-migrations/
-scripts/
-tests/
+    cpcb_client.py
+    openaq_client.py
+    weather_client.py
+  repositories/
+    aqi_timeseries_repository.py
+  schemas/
+    ingestion.py
+  services/
+    ingestion_service.py
+    preprocessing_service.py
+    feature_service.py
+    dataset_service.py
 ```
 
-## Domain Coverage
-- User
-- UserProfile
-- SavedLocation
-- AlertPreference
-- DeviceToken
-- ForecastLog
-- NotificationLog
+## Key Ingestion/Processing Endpoints
+- `POST /api/v1/admin/ingestion/run-current`
+- `POST /api/v1/admin/ingestion/backfill`
+- `POST /api/v1/admin/preprocessing/run`
+- `GET /api/v1/admin/ingestion/summary`
+- `POST /api/v1/admin/datasets/build`
 
-## API Endpoints
-- `GET /api/v1/users/me`
-- `PATCH /api/v1/users/me`
-- `POST /api/v1/users/onboarding/complete`
-- `GET /api/v1/profile`
-- `PUT /api/v1/profile`
-- `GET /api/v1/locations`
-- `POST /api/v1/locations`
-- `PATCH /api/v1/locations/{location_id}`
-- `DELETE /api/v1/locations/{location_id}`
-- `POST /api/v1/locations/{location_id}/set-primary`
-- `GET /api/v1/alerts/preferences`
-- `PUT /api/v1/alerts/preferences`
-- `POST /api/v1/notifications/device-token`
-- `DELETE /api/v1/notifications/device-token/{token_id}`
-- `GET /api/v1/aqi/current`
-- `GET /api/v1/aqi/current/by-coordinates`
-- `GET /api/v1/aqi/history`
-- `GET /api/v1/forecasts/current`
-- `GET /api/v1/forecasts/weekly`
-- `GET /api/v1/forecasts/best-window`
-- `POST /api/v1/forecasts/generate-demo`
-- `GET /api/v1/recommendations/current`
-- `POST /api/v1/assistant/explain`
-- `GET /api/v1/admin/health`
-- `GET /api/v1/admin/metrics-summary`
+Existing core endpoints for users/profile/locations/alerts/aqi/forecasts stay unchanged.
+
+## InfluxDB Measurement Design
+
+### `aqi_raw`
+Tags:
+- `source`
+- `station_id`
+- `city`
+- `state`
+- `country`
+
+Fields:
+- `aqi`
+- `pm25`, `pm10`, `no2`, `so2`, `co`, `o3`, `nh3`
+- `latitude`, `longitude`
+
+Timestamp:
+- `observed_at`
+
+### `aqi_processed`
+Tags:
+- `source`
+- `station_id`
+- `city`
+
+Fields:
+- `aqi`
+- `rolling_avg_3h`, `rolling_avg_6h`, `rolling_avg_12h`
+- `lag_1`, `lag_3`, `lag_6`, `lag_12`, `lag_24`
+- `hour_of_day`, `day_of_week`, `is_weekend`
+- `missing_flag`, `imputed_flag`
+
+Timestamp:
+- `observed_at`
 
 ## Local Setup
-1. Create env file:
+1. Copy env:
 ```bash
 cp .env.example .env
 ```
@@ -70,29 +85,26 @@ python -m venv .venv
 source .venv/bin/activate  # Windows: .venv\\Scripts\\activate
 pip install -r requirements.txt
 ```
-3. (Optional) Bootstrap schema for local DB:
-```bash
-psql "$POSTGRES_URI" -f scripts/schema.sql
-```
-4. Run API:
+3. Run API:
 ```bash
 uvicorn app.main:app --reload --port 8000
 ```
 
-## Auth Notes
-- Production: verify Firebase JWT with `firebase_admin` in `integrations/firebase_auth.py`.
-- Local dev: `ALLOW_MOCK_AUTH=true`, and pass `Authorization: Bearer dev-token`.
+## Pipeline Behavior Notes
+- Source clients support `SOURCE_MOCK_MODE=true` so ingestion is runnable without live credentials.
+- Ingestion validates and normalizes to `NormalizedAQIRecord`.
+- Deduplication key:
+  - primary: `source + station_id + observed_at`
+  - fallback: `source + city + lat + lon + observed_at`
+- Preprocessing includes:
+  - hourly resampling
+  - short-gap conservative imputation
+  - missing/imputed flags
+  - rolling and lag features
 
-## InfluxDB Time-Series Design
-Measurement support in `repositories/aqi_timeseries_repository.py`:
-- `aqi_raw`
-- `aqi_processed`
-- `aqi_predictions`
-- `model_metrics`
-- `pollutant_raw` (stub-ready)
+## Tests
+```bash
+pytest tests -q
+```
 
-## Next Batch Integration Points
-- Real CPCB/OGD ingestion adapters
-- LSTM inference service hookup
-- Scheduled alert dispatch and best-window jobs
-- Assistant integration on structured context only
+Includes tests for validation, normalization, dedupe, feature generation, and preprocessing missing-value behavior.

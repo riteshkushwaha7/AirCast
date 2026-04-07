@@ -16,9 +16,13 @@ from app.repositories.user_repository import UserRepository
 from app.services.alert_service import AlertService
 from app.services.aqi_service import AQIService
 from app.services.assistant_service import AssistantService
+from app.services.dataset_service import DatasetService
 from app.services.forecast_service import ForecastService
+from app.services.feature_service import FeatureService
+from app.services.ingestion_service import IngestionService
 from app.services.location_service import LocationService
 from app.services.notification_service import NotificationService
+from app.services.preprocessing_service import PreprocessingService
 from app.services.profile_service import ProfileService
 from app.services.user_service import UserService
 
@@ -55,6 +59,32 @@ def get_aqi_service(
 ) -> AQIService:
     timeseries_repo = AQITimeSeriesRepository(influx_provider)
     return AQIService(timeseries_repo)
+
+
+def get_ingestion_service(
+    influx_provider: InfluxProvider = Depends(get_influx_provider),
+) -> IngestionService:
+    timeseries_repo = AQITimeSeriesRepository(influx_provider)
+    return IngestionService(timeseries_repo)
+
+
+def get_feature_service() -> FeatureService:
+    return FeatureService()
+
+
+def get_preprocessing_service(
+    influx_provider: InfluxProvider = Depends(get_influx_provider),
+    feature_service: FeatureService = Depends(get_feature_service),
+) -> PreprocessingService:
+    timeseries_repo = AQITimeSeriesRepository(influx_provider)
+    return PreprocessingService(timeseries_repo, feature_service=feature_service)
+
+
+def get_dataset_service(
+    influx_provider: InfluxProvider = Depends(get_influx_provider),
+) -> DatasetService:
+    timeseries_repo = AQITimeSeriesRepository(influx_provider)
+    return DatasetService(timeseries_repo)
 
 
 def get_assistant_service() -> AssistantService:

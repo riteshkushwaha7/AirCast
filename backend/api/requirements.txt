@@ -10,4 +10,5 @@ influxdb-client==1.43.0
 firebase-admin==6.5.0
 python-jose==3.3.0
 httpx==0.27.0
+pandas==2.2.2
 pytest==8.3.2

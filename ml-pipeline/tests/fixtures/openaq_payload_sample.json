@@ -1,0 +1,26 @@
+[
+  {
+    "locationId": "NOI-SECTOR62-01",
+    "location": "Sector 62",
+    "city": "Noida",
+    "state": "Uttar Pradesh",
+    "country": "IN",
+    "coordinates": {
+      "latitude": 28.625,
+      "longitude": 77.365
+    },
+    "datetime": {
+      "utc": "2026-04-07T00:00:00Z"
+    },
+    "measurements": {
+      "aqi": 156,
+      "pm25": 102,
+      "pm10": 165,
+      "no2": 34,
+      "so2": 17,
+      "co": 0.8,
+      "o3": 28,
+      "nh3": 18
+    }
+  }
+]
