@@ -14,6 +14,10 @@ ml-pipeline/
     clean_timeseries.py
     resample_series.py
     generate_features.py
+  forecasting/
+    weekly_forecast.py
+    planner_projection.py
+    confidence.py
   datasets/
     build_training_dataset.py
   shared/
@@ -34,11 +38,13 @@ ml-pipeline/
 - hourly resampling with missing/imputed flags
 - feature generation for rolling/lag/temporal predictors
 - dataset builder hooks for train/validation/test and sequence windows
+- weekly planner projection stubs with confidence labeling for day-level planning output
 
 ## Prerequisites
 - backend API dependencies installed (for shared backend service imports)
 - InfluxDB running for real writes
 - `.env` in `backend/api` configured (or use mock mode)
+- For demo-only usage, keep `SOURCE_MOCK_MODE=true` in backend env.
 
 Install dependencies:
 ```bash
@@ -76,6 +82,11 @@ python preprocessing/generate_features.py --input data/processed/aqi_resampled.c
 ### Build training dataset from processed InfluxDB series
 ```bash
 python datasets/build_training_dataset.py --city Delhi --out data/processed/training_dataset.csv
+```
+
+### Build weekly planner projection JSON
+```bash
+python forecasting/weekly_forecast.py --input data/processed/training_dataset.csv --days 7
 ```
 
 ## Testing

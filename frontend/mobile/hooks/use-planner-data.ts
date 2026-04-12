@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 
-import type { WeeklyDay } from "../types/airwise";
-import { getPlannerDays } from "../services/api";
+import type { WeeklyPlannerResponse } from "../types/airwise";
+import { getPlannerWeek } from "../services/api";
 
 export function usePlannerData() {
-  const [days, setDays] = useState<WeeklyDay[]>([]);
+  const [planner, setPlanner] = useState<WeeklyPlannerResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -13,9 +13,9 @@ export function usePlannerData() {
 
     const load = async () => {
       try {
-        const payload = await getPlannerDays();
+        const payload = await getPlannerWeek();
         if (active) {
-          setDays(payload);
+          setPlanner(payload);
           setError(null);
         }
       } catch (err) {
@@ -34,5 +34,13 @@ export function usePlannerData() {
     };
   }, []);
 
-  return { days, loading, error };
+  return {
+    planner,
+    days: planner?.days ?? [],
+    summary: planner?.week_summary ?? null,
+    watchSummary: planner?.watch_summary ?? null,
+    locationName: planner?.location.name ?? "Selected location",
+    loading,
+    error
+  };
 }

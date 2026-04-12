@@ -67,6 +67,20 @@ class AQIProcessedRecord:
     lag_24: float | None = None
 
 
+@dataclass
+class AQIPredictionRecord:
+    model_name: str
+    city: str
+    forecast_horizon: int
+    source: str
+    predicted_aqi: float
+    confidence_score: float | None
+    predicted_category: str | None
+    target_timestamp: datetime | None = None
+    generated_timestamp: datetime | None = None
+    timestamp: datetime = field(default_factory=lambda: datetime.now(tz=UTC))
+
+
 class AQITimeSeriesRepository:
     """InfluxDB repository for AQI timeseries and forecasting datasets."""
 
@@ -155,6 +169,33 @@ class AQITimeSeriesRepository:
                 point.field(key, value)
         point.time(_utc(timestamp))
         self.influx_provider.write_api().write(bucket=self.bucket, record=point)
+
+    def write_prediction_records(self, records: Sequence[AQIPredictionRecord | dict[str, Any]]) -> int:
+        if not records:
+            return 0
+
+        points: list[Point] = []
+        for item in records:
+            record = item if isinstance(item, AQIPredictionRecord) else AQIPredictionRecord(**item)
+            point = Point(self.measure_predictions)
+            point.tag("model_name", record.model_name)
+            point.tag("city", record.city)
+            point.tag("forecast_horizon", str(record.forecast_horizon))
+            point.tag("source", record.source)
+            point.field("predicted_aqi", float(record.predicted_aqi))
+            if record.confidence_score is not None:
+                point.field("confidence_score", float(record.confidence_score))
+            if record.predicted_category:
+                point.field("predicted_category", record.predicted_category)
+            if record.generated_timestamp is not None:
+                point.field("generated_timestamp", _utc(record.generated_timestamp).isoformat())
+            if record.target_timestamp is not None:
+                point.field("target_timestamp", _utc(record.target_timestamp).isoformat())
+            point.time(_utc(record.timestamp))
+            points.append(point)
+
+        self.influx_provider.write_api().write(bucket=self.bucket, record=points)
+        return len(points)
 
     def write_model_metrics(self, tags: dict[str, Any], fields: dict[str, Any], timestamp: datetime) -> None:
         point = Point(self.measure_model_metrics)
@@ -245,6 +286,61 @@ from(bucket: "{self.bucket}")
         tables = self.influx_provider.query_api().query(query=flux)
         return self._records_from_tables(tables)
 
+    def read_latest_predictions_for_city(
+        self,
+        city: str,
+        horizons: Sequence[int],
+        source: str | None = None,
+        model_name: str | None = None,
+        lookback_hours: int = 48,
+    ) -> list[dict[str, Any]]:
+        filters = [f'r._measurement == "{self.measure_predictions}"', f'r.city == "{_escape_flux(city)}"']
+        if source:
+            filters.append(f'r.source == "{_escape_flux(source)}"')
+        if model_name:
+            filters.append(f'r.model_name == "{_escape_flux(model_name)}"')
+        if horizons:
+            horizon_filters = " or ".join([f'r.forecast_horizon == "{int(value)}"' for value in horizons])
+            filters.append(f"({horizon_filters})")
+        filter_clause = " and ".join(filters)
+
+        start_at = _utc(datetime.now(tz=UTC) - timedelta(hours=lookback_hours))
+        stop_at = _utc(datetime.now(tz=UTC))
+        flux = f"""
+from(bucket: "{self.bucket}")
+  |> range(start: {start_at.isoformat()}, stop: {stop_at.isoformat()})
+  |> filter(fn: (r) => {filter_clause})
+  |> pivot(
+      rowKey: ["_time", "model_name", "city", "forecast_horizon", "source"],
+      columnKey: ["_field"],
+      valueColumn: "_value"
+  )
+  |> sort(columns: ["_time"], desc: true)
+"""
+        tables = self.influx_provider.query_api().query(query=flux)
+        rows = self._records_from_tables(tables)
+
+        latest_by_horizon: dict[int, dict[str, Any]] = {}
+        for row in rows:
+            horizon_raw = row.get("forecast_horizon")
+            if horizon_raw is None:
+                continue
+            try:
+                horizon = int(horizon_raw)
+            except (TypeError, ValueError):
+                continue
+            if horizon in latest_by_horizon:
+                continue
+            latest_by_horizon[horizon] = row
+
+        ordered: list[dict[str, Any]] = []
+        for horizon in horizons:
+            row = latest_by_horizon.get(int(horizon))
+            if row is None:
+                continue
+            ordered.append(row)
+        return ordered
+
     def get_latest_aqi_for_city(self, city: str) -> float | None:
         end_at = datetime.now(tz=UTC)
         start_at = end_at - timedelta(hours=72)
@@ -322,12 +418,19 @@ from(bucket: "{self.bucket}")
                     "source": values.get("source"),
                     "station_id": values.get("station_id"),
                     "city": values.get("city"),
+                    "model_name": values.get("model_name"),
+                    "forecast_horizon": values.get("forecast_horizon"),
                     "state": values.get("state"),
                     "country": values.get("country"),
                     "observed_at": _utc(observed_at) if isinstance(observed_at, datetime) else observed_at,
                 }
                 for field_name in (
                     "aqi",
+                    "predicted_aqi",
+                    "confidence_score",
+                    "generated_timestamp",
+                    "target_timestamp",
+                    "predicted_category",
                     "pm25",
                     "pm10",
                     "no2",

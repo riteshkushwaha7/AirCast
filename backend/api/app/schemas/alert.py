@@ -3,6 +3,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from app.utils.enums import ActivityType
+from app.utils.enums import NotificationType
 from app.utils.validators import validate_quiet_hour, validate_threshold_aqi
 
 
@@ -50,3 +52,30 @@ class AlertPreferenceUpdateRequest(BaseModel):
     @classmethod
     def _validate_quiet_hour(cls, value: str) -> str:
         return validate_quiet_hour(value)
+
+
+class AlertEvaluateRequest(BaseModel):
+    location_id: UUID | None = None
+    activity_type: ActivityType | None = None
+    now: datetime | None = None
+
+
+class AlertDecisionRead(BaseModel):
+    should_send: bool
+    alert_type: NotificationType
+    title: str
+    body: str
+    target_horizon: int | None = None
+    priority: str
+    payload: dict
+    reason: str | None = None
+
+
+class AlertEvaluateResponse(BaseModel):
+    decisions: list[AlertDecisionRead]
+
+
+class AlertTestSendRequest(BaseModel):
+    location_id: UUID | None = None
+    activity_type: ActivityType | None = None
+    now: datetime | None = None

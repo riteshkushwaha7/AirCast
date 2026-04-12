@@ -45,3 +45,11 @@ class DeviceRepository:
         self.session.commit()
         self.session.refresh(token)
         return token
+
+    def mark_invalid(self, token: DeviceToken) -> DeviceToken:
+        token.is_active = False
+        token.last_seen_at = utcnow()
+        self.session.add(token)
+        self.session.commit()
+        self.session.refresh(token)
+        return token

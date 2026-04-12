@@ -1,17 +1,11 @@
-﻿# My AirCast Frontend (Batch 3)
+# AirWise Web App
 
-Minimal, mobile-first Next.js web app for the My AirCast AQI product.
-
-## Stack
-- Next.js App Router
-- TypeScript
-- Tailwind CSS
-- Typed API wrapper with mock fallback
+Next.js web frontend for AirWise with a calm, minimal UI for AQI decisions.
 
 ## Routes
+
 - `/`
-- `/login`
-- `/signup`
+- `/login`, `/signup`
 - `/onboarding`
 - `/dashboard`
 - `/forecast`
@@ -20,52 +14,45 @@ Minimal, mobile-first Next.js web app for the My AirCast AQI product.
 - `/locations`
 - `/profile`
 - `/about-aqi`
-- `/assistant`
+- `/assistant` (stub)
 
-## Architecture
-```text
-app/
-  (marketing)/
-  (auth)/
-  (app)/
-components/
-  cards/
-  charts/
-  forms/
-  layout/
-  navigation/
-  states/
-  ui/
-lib/
-  api/
-  constants/
-  hooks/
-  mock/
-types/
-```
+## Environment
 
-## Data Flow
-- `lib/api/airwise.ts` contains typed service wrappers.
-- Services attempt backend API calls first.
-- On failure, they return realistic mock data from `lib/mock/data.ts`.
-
-This keeps the UI usable during backend downtime and easy to switch to live data later.
-
-## Run locally
 ```bash
 cd frontend/web
+cp .env.local.example .env.local
+```
+
+Important variables:
+
+- `NEXT_PUBLIC_API_BASE_URL`
+- `NEXT_PUBLIC_ENABLE_MOCK_FALLBACK`
+
+## Run
+
+```bash
 npm install
 npm run dev
 ```
 
-## Build
+## Docker
+
 ```bash
-npm run build
+cd frontend/web
+docker build -t airwise-web .
+docker run -e NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api/v1 -p 3000:3000 airwise-web
 ```
 
-## Notes
-- UI is intentionally calm, whitespace-first, and low-density.
-- Dashboard shows only key decisions: current AQI, short forecast, recommendation, best window, and one small trend chart.
-- Assistant page is a polished stub; it does not implement real chat logic.
+or from root:
 
+```bash
+docker compose up --build web
+```
 
+## Demo Stability
+
+Set:
+
+- `NEXT_PUBLIC_ENABLE_MOCK_FALLBACK=true`
+
+This keeps pages usable if backend data is unavailable during demo.

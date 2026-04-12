@@ -17,6 +17,9 @@ export type AQICategory =
   | "very_unhealthy"
   | "hazardous";
 
+export type PlannerTrend = "improving" | "stable" | "worsening";
+export type PlannerConfidenceLabel = "higher confidence" | "moderate confidence" | "lower confidence";
+
 export type NotificationType =
   | "threshold_alert"
   | "worsening_alert"
@@ -72,13 +75,69 @@ export interface Recommendation {
   risk_level: string;
 }
 
-export interface WeeklyDay {
-  day: string;
-  avg_aqi: number;
+export interface PlannerAqiRange {
+  min: number;
+  max: number;
+}
+
+export interface PlannerBestOutdoorWindow {
+  start: string | null;
+  end: string | null;
+  label: string;
+  confidence_label: PlannerConfidenceLabel;
+}
+
+export interface PlannerActivitySuitability {
+  activity_type: ActivityType;
+  suitable: boolean;
+  caution_level: string;
+  note: string;
+  mask_advised: boolean;
+  avoid_outdoor: boolean;
+}
+
+export interface PlannerDay {
+  date: string;
+  day_name: string;
+  representative_aqi: number;
+  aqi_range: PlannerAqiRange;
   category: AQICategory;
-  trend: "up" | "down" | "steady";
+  trend: PlannerTrend;
+  confidence_label: PlannerConfidenceLabel;
   planning_hint: string;
-  best_window: string;
+  best_outdoor_window: PlannerBestOutdoorWindow | null;
+  activities: PlannerActivitySuitability[];
+}
+
+export interface PlannerWeekSummary {
+  overall_outlook: string;
+  best_days: string[];
+  caution_days: string[];
+  summary_text: string;
+  worst_day: string | null;
+}
+
+export interface PlannerWatchSummary {
+  title: string;
+  lines: string[];
+}
+
+export interface PlannerLocationSummary {
+  location_id: string | null;
+  name: string;
+  city: string;
+  state: string | null;
+  country: string;
+  lat: number | null;
+  lon: number | null;
+}
+
+export interface WeeklyPlannerResponse {
+  location: PlannerLocationSummary;
+  generated_at: string;
+  week_summary: PlannerWeekSummary;
+  days: PlannerDay[];
+  watch_summary: PlannerWatchSummary;
 }
 
 export interface AlertSettings {

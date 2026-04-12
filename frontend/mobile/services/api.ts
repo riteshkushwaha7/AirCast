@@ -6,7 +6,7 @@ import type {
   ForecastPoint,
   Location,
   Recommendation,
-  WeeklyDay
+  WeeklyPlannerResponse
 } from "../types/airwise";
 import {
   mockAlertSettings,
@@ -91,29 +91,17 @@ export async function getForecast(locationId?: string): Promise<ForecastPoint[]>
   return withFallback(async () => (await request<{ horizons: ForecastPoint[] }>(`/forecasts/current${query}`)).horizons, mockForecast);
 }
 
-export async function getPlannerDays(): Promise<WeeklyDay[]> {
-  return withFallback(async () => {
-    const response = await request<{ days: { day: string; avg_aqi: number; category: WeeklyDay["category"]; trend: WeeklyDay["trend"] }[] }>(
-      "/forecasts/weekly"
-    );
-    return response.days.map((item) => ({
-      day: item.day,
-      avg_aqi: item.avg_aqi,
-      category: item.category,
-      trend: item.trend,
-      planning_hint:
-        item.category === "good"
-          ? "Great day for outdoor plans."
-          : item.category === "moderate"
-            ? "Most activities are fine."
-            : item.category === "unhealthy_for_sensitive_groups"
-              ? "Sensitive users should reduce heavy outdoor activity."
-              : item.category === "unhealthy"
-                ? "Mask is recommended outdoors."
-                : "Prefer indoor plans today.",
-      best_window: "7:00-8:30 AM"
-    }));
-  }, mockWeeklyPlanner);
+export async function getPlannerWeek(locationId?: string, activities?: string[]): Promise<WeeklyPlannerResponse> {
+  const params = new URLSearchParams();
+  if (locationId) params.set("location_id", locationId);
+  activities?.forEach((activity) => params.append("activities", activity));
+  const query = params.toString() ? `?${params.toString()}` : "";
+  return withFallback(() => request<WeeklyPlannerResponse>(`/planner/weekly${query}`), mockWeeklyPlanner);
+}
+
+export async function getPlannerDays(locationId?: string): Promise<WeeklyPlannerResponse["days"]> {
+  const planner = await getPlannerWeek(locationId);
+  return planner.days;
 }
 
 export async function getAlertSettings(): Promise<AlertSettings> {

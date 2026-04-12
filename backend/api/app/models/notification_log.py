@@ -22,6 +22,7 @@ class NotificationLog(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     title: Mapped[str] = mapped_column(String(120), nullable=False)
     body: Mapped[str] = mapped_column(Text, nullable=False)
     payload_json: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    provider_response_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     status: Mapped[NotificationStatus] = mapped_column(
         SQLEnum(NotificationStatus, name="notification_status_enum", native_enum=False),
         default=NotificationStatus.QUEUED,

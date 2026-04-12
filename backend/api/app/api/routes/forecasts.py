@@ -19,11 +19,10 @@ from app.services.location_service import LocationService
 router = APIRouter(prefix="/forecasts", tags=["forecasts"])
 
 
-def _resolve_location_id(current_user: User, requested_location_id: UUID | None, location_service: LocationService):
+def _resolve_location(current_user: User, requested_location_id: UUID | None, location_service: LocationService):
     if requested_location_id:
-        return location_service.get_location(current_user.id, requested_location_id).id
-    primary = location_service.get_primary_location(current_user.id)
-    return primary.id if primary else None
+        return location_service.get_location(current_user.id, requested_location_id)
+    return location_service.get_primary_location(current_user.id)
 
 
 @router.get("/current", response_model=ForecastCurrentResponse)
@@ -33,8 +32,13 @@ def get_current_forecast(
     location_service: LocationService = Depends(get_location_service),
     forecast_service: ForecastService = Depends(get_forecast_service),
 ) -> ForecastCurrentResponse:
-    resolved_location_id = _resolve_location_id(current_user, location_id, location_service)
-    horizons = forecast_service.generate_current_summary(user_id=current_user.id, location_id=resolved_location_id)
+    location = _resolve_location(current_user, location_id, location_service)
+    resolved_location_id = location.id if location else None
+    horizons = forecast_service.generate_current_summary(
+        user_id=current_user.id,
+        location_id=resolved_location_id,
+        city=location.city if location else None,
+    )
     return ForecastCurrentResponse(
         location_id=resolved_location_id,
         generated_at=datetime.now(tz=UTC),
@@ -49,8 +53,9 @@ def get_weekly_forecast(
     location_service: LocationService = Depends(get_location_service),
     forecast_service: ForecastService = Depends(get_forecast_service),
 ) -> WeeklyForecastResponse:
-    resolved_location_id = _resolve_location_id(current_user, location_id, location_service)
-    days = forecast_service.generate_weekly_summary(location_id=resolved_location_id)
+    location = _resolve_location(current_user, location_id, location_service)
+    resolved_location_id = location.id if location else None
+    days = forecast_service.generate_weekly_summary(location_id=resolved_location_id, city=location.city if location else None)
     return WeeklyForecastResponse(
         location_id=resolved_location_id,
         generated_at=datetime.now(tz=UTC),
@@ -65,7 +70,8 @@ def get_best_window(
     location_service: LocationService = Depends(get_location_service),
     forecast_service: ForecastService = Depends(get_forecast_service),
 ) -> BestWindowResponse:
-    resolved_location_id = _resolve_location_id(current_user, location_id, location_service)
+    location = _resolve_location(current_user, location_id, location_service)
+    resolved_location_id = location.id if location else None
     window = forecast_service.best_window()
     return BestWindowResponse(location_id=resolved_location_id, **window)
 
@@ -77,6 +83,11 @@ def generate_demo_forecasts(
     location_service: LocationService = Depends(get_location_service),
     forecast_service: ForecastService = Depends(get_forecast_service),
 ) -> ForecastGenerateDemoResponse:
-    resolved_location_id = _resolve_location_id(current_user, location_id, location_service)
-    saved = forecast_service.generate_demo_logs(user_id=current_user.id, location_id=resolved_location_id)
+    location = _resolve_location(current_user, location_id, location_service)
+    resolved_location_id = location.id if location else None
+    saved = forecast_service.generate_demo_logs(
+        user_id=current_user.id,
+        location_id=resolved_location_id,
+        city=location.city if location else None,
+    )
     return ForecastGenerateDemoResponse(generated=True, location_id=resolved_location_id, saved_records=saved)

@@ -1,96 +1,43 @@
-# My AirCast Mobile (Expo)
+# AirWise Mobile App (Expo)
 
-A clean React Native mobile prototype for **My AirCast** (AirWise), built with Expo + TypeScript + NativeWind.
+React Native mobile client for AirWise, optimized for quick AQI awareness and daily planning.
 
-This app is intentionally placed inside `frontend/mobile` so all client apps stay grouped under `frontend/`.
+## Stack
 
-## Tech Stack
-
-- Expo (React Native)
+- Expo + React Native
 - TypeScript
 - Expo Router
-- NativeWind (Tailwind-style utility classes)
+- NativeWind
 - Expo Notifications
-- AsyncStorage for local prototype persistence
 
-## Folder Structure
+## Screens
 
-```text
-frontend/mobile/
-  app/
-    (auth)/
-    (onboarding)/
-    (tabs)/
-    about-aqi.tsx
-    assistant.tsx
-  components/
-    cards/
-    charts/
-    layout/
-    ui/
-  constants/
-  hooks/
-  services/
-  types/
-  assets/
-  app.json
-  package.json
-  tailwind.config.js
-  README.md
-```
-
-## Implemented Screens
-
-- Login
-- Signup
+- Login / Signup
 - Onboarding
-- Home (AQI snapshot)
+- Home
 - Forecast
-- Planner (7-day summary)
+- Planner
 - Alerts
 - Profile
 - About AQI
 - Assistant (stub)
 
-## Data Layer
-
-The app uses typed service wrappers in `services/api.ts`.
-
-- If backend is reachable, endpoints are used.
-- If not, mock fallback data is used (enabled by default).
-
-Mock data lives in `services/mock-data.ts`.
-
-## Notifications + Watch-Friendly Payloads
-
-`services/notifications.ts` includes:
-
-- Push permission + token registration
-- Notification listeners
-- Token persistence
-- `buildWatchNotificationPayload(...)` for short smartwatch-safe title/body formatting
-
 ## Environment
-
-Copy `.env.example` to `.env`:
-
-```bash
-cp .env.example .env
-```
-
-Variables:
-
-- `EXPO_PUBLIC_API_BASE_URL` (default: `http://localhost:8000/api/v1`)
-- `EXPO_PUBLIC_ENABLE_MOCK_FALLBACK` (`true`/`false`)
-
-## Run Locally
-
-From repo root:
 
 ```bash
 cd frontend/mobile
+cp .env.example .env
+```
+
+Main variables:
+
+- `EXPO_PUBLIC_API_BASE_URL`
+- `EXPO_PUBLIC_ENABLE_MOCK_FALLBACK`
+
+## Run
+
+```bash
 npm install
-npm run typecheck
 npm run start
 ```
 
@@ -102,9 +49,11 @@ npm run ios
 npm run web
 ```
 
-## Notes for Next Batch
+## Demo Stability
 
-- Replace auth stubs in `services/auth.ts` with Firebase Auth.
-- Connect notification token sync to backend `/notifications/device-token`.
-- Swap mock fallback with real backend responses page-by-page.
-- Add persistent user session + secure token handling.
+Keep `EXPO_PUBLIC_ENABLE_MOCK_FALLBACK=true` for reliable demo behavior when backend data is unavailable.
+
+## Notes
+
+- Mobile uses concise planner cards with best/caution day highlights.
+- Notification service is integration-ready and supports watch-friendly payload formatting.

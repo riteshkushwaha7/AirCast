@@ -1,4 +1,17 @@
-from app.api.routes import admin, alerts, assistant, aqi, auth, forecasts, locations, notifications, profiles, recommendations, users
+from app.api.routes import (
+    admin,
+    alerts,
+    assistant,
+    aqi,
+    auth,
+    forecasts,
+    locations,
+    notifications,
+    planner,
+    profiles,
+    recommendations,
+    users,
+)
 
 __all__ = [
     "auth",
@@ -9,6 +22,7 @@ __all__ = [
     "notifications",
     "aqi",
     "forecasts",
+    "planner",
     "recommendations",
     "assistant",
     "admin",

@@ -73,6 +73,12 @@ SAMPLE_WEEKLY_FORECAST = [
     {"day": "Sun", "avg_aqi": 154.0, "category": AQICategory.UNHEALTHY, "trend": "down"},
 ]
 
+SAMPLE_WEEKLY_PLANNER_SCENARIOS: dict[str, list[float]] = {
+    "good": [72.0, 78.0, 83.0, 74.0, 88.0, 91.0, 79.0],
+    "mixed": [162.0, 151.0, 143.0, 138.0, 147.0, 158.0, 149.0],
+    "poor": [198.0, 206.0, 219.0, 211.0, 226.0, 235.0, 214.0],
+}
+
 
 def sample_history(hours: int = 24) -> list[dict]:
     now = datetime.now(tz=UTC)

@@ -1,15 +1,16 @@
-﻿import type {
+import type {
   AlertPreference,
   AQICurrentResponse,
   AQIHistoryResponse,
   AssistantExplainResponse,
   BestWindowResponse,
   ForecastCurrentResponse,
+  PlannerDayPlan,
   RecommendationResponse,
   SavedLocation,
   User,
   UserProfile,
-  WeeklyPlannerDay,
+  WeeklyPlannerResponse,
 } from "@/types/airwise";
 
 export const mockUser: User = {
@@ -114,22 +115,218 @@ export const mockRecommendation: RecommendationResponse = {
   activity_type: "walking",
   current_aqi: 168,
   category: "unhealthy",
-  short_status: "Unhealthy",
-  recommendation_text: "Wear a mask and avoid prolonged outdoor activity.",
+  short_status: "Mask advised",
+  recommendation_text: "Air quality may worsen later today. Wear a mask if you need to go outside.",
   mask_advised: true,
-  avoid_outdoor: false,
+  avoid_outdoor: true,
   risk_level: "high",
 };
 
-export const mockWeeklyPlanner: WeeklyPlannerDay[] = [
-  { day: "Monday", avg_aqi: 152, category: "unhealthy", trend: "up", planning_hint: "Keep outdoor activity short.", best_window: "7:00 AM - 8:15 AM" },
-  { day: "Tuesday", avg_aqi: 141, category: "unhealthy_for_sensitive_groups", trend: "down", planning_hint: "Better for light outdoor movement.", best_window: "7:30 AM - 9:00 AM" },
-  { day: "Wednesday", avg_aqi: 136, category: "unhealthy_for_sensitive_groups", trend: "steady", planning_hint: "Sensitive users should stay cautious.", best_window: "6:45 AM - 8:00 AM" },
-  { day: "Thursday", avg_aqi: 129, category: "unhealthy_for_sensitive_groups", trend: "down", planning_hint: "Reasonable for short walks.", best_window: "7:00 AM - 8:45 AM" },
-  { day: "Friday", avg_aqi: 145, category: "unhealthy_for_sensitive_groups", trend: "up", planning_hint: "Plan commute with a mask.", best_window: "7:15 AM - 8:30 AM" },
-  { day: "Saturday", avg_aqi: 160, category: "unhealthy", trend: "up", planning_hint: "Prefer indoor exercise.", best_window: "7:00 AM - 7:45 AM" },
-  { day: "Sunday", avg_aqi: 149, category: "unhealthy_for_sensitive_groups", trend: "down", planning_hint: "Morning is relatively better.", best_window: "7:20 AM - 8:40 AM" },
+const today = new Date();
+
+function dayDate(offset: number) {
+  const value = new Date(today);
+  value.setDate(today.getDate() + offset);
+  return value;
+}
+
+function activityForDay(
+  activity_type: PlannerDayPlan["activities"][number]["activity_type"],
+  suitable: boolean,
+  caution_level: string,
+  note: string,
+  mask = false,
+  avoid = false,
+): PlannerDayPlan["activities"][number] {
+  return {
+    activity_type,
+    suitable,
+    caution_level,
+    note,
+    mask_advised: mask,
+    avoid_outdoor: avoid,
+  };
+}
+
+export const mockPlannerDays: PlannerDayPlan[] = [
+  {
+    date: dayDate(0).toISOString().slice(0, 10),
+    day_name: dayDate(0).toLocaleDateString("en-US", { weekday: "long" }),
+    representative_aqi: 162,
+    aqi_range: { min: 146, max: 178 },
+    category: "unhealthy",
+    trend: "worsening",
+    confidence_label: "higher confidence",
+    planning_hint: "Avoid outdoor exercise during the afternoon.",
+    best_outdoor_window: {
+      start: "06:40",
+      end: "08:10",
+      label: "Early morning may be better",
+      confidence_label: "higher confidence",
+    },
+    activities: [
+      activityForDay("walking", true, "elevated", "Short morning walks may be okay.", true, false),
+      activityForDay("running", false, "high", "Outdoor running is not recommended.", true, true),
+      activityForDay("commute", true, "high", "Use a mask during travel.", true, false),
+    ],
+  },
+  {
+    date: dayDate(1).toISOString().slice(0, 10),
+    day_name: dayDate(1).toLocaleDateString("en-US", { weekday: "long" }),
+    representative_aqi: 151,
+    aqi_range: { min: 132, max: 169 },
+    category: "unhealthy_for_sensitive_groups",
+    trend: "improving",
+    confidence_label: "higher confidence",
+    planning_hint: "Morning hours may be safer for light outdoor activity.",
+    best_outdoor_window: {
+      start: "06:50",
+      end: "08:20",
+      label: "Morning window looks cleaner",
+      confidence_label: "moderate confidence",
+    },
+    activities: [
+      activityForDay("walking", true, "moderate", "Light walking is better in the morning.", false, false),
+      activityForDay("running", false, "elevated", "Keep runs indoors today.", true, false),
+      activityForDay("commute", true, "elevated", "Commute is fine with a mask.", true, false),
+    ],
+  },
+  {
+    date: dayDate(2).toISOString().slice(0, 10),
+    day_name: dayDate(2).toLocaleDateString("en-US", { weekday: "long" }),
+    representative_aqi: 142,
+    aqi_range: { min: 122, max: 160 },
+    category: "unhealthy_for_sensitive_groups",
+    trend: "improving",
+    confidence_label: "moderate confidence",
+    planning_hint: "Reasonable day for short outdoor plans.",
+    best_outdoor_window: {
+      start: "07:00",
+      end: "08:30",
+      label: "Early morning may be better",
+      confidence_label: "moderate confidence",
+    },
+    activities: [
+      activityForDay("walking", true, "moderate", "Good day for a short morning walk.", false, false),
+      activityForDay("running", false, "elevated", "Choose lower-intensity activity instead.", false, false),
+      activityForDay("commute", true, "moderate", "Commute looks manageable for most users.", false, false),
+    ],
+  },
+  {
+    date: dayDate(3).toISOString().slice(0, 10),
+    day_name: dayDate(3).toLocaleDateString("en-US", { weekday: "long" }),
+    representative_aqi: 136,
+    aqi_range: { min: 116, max: 154 },
+    category: "unhealthy_for_sensitive_groups",
+    trend: "stable",
+    confidence_label: "moderate confidence",
+    planning_hint: "One of the better days this week for outdoor plans.",
+    best_outdoor_window: {
+      start: "07:10",
+      end: "08:45",
+      label: "Early morning may be better",
+      confidence_label: "moderate confidence",
+    },
+    activities: [
+      activityForDay("walking", true, "moderate", "Short outdoor activity should feel easier.", false, false),
+      activityForDay("running", false, "elevated", "Prefer indoor cardio sessions.", false, false),
+      activityForDay("commute", true, "moderate", "Commute is manageable.", false, false),
+    ],
+  },
+  {
+    date: dayDate(4).toISOString().slice(0, 10),
+    day_name: dayDate(4).toLocaleDateString("en-US", { weekday: "long" }),
+    representative_aqi: 148,
+    aqi_range: { min: 126, max: 168 },
+    category: "unhealthy_for_sensitive_groups",
+    trend: "worsening",
+    confidence_label: "moderate confidence",
+    planning_hint: "Air quality may worsen in the evening.",
+    best_outdoor_window: {
+      start: "07:20",
+      end: "08:50",
+      label: "Early morning may be better",
+      confidence_label: "lower confidence",
+    },
+    activities: [
+      activityForDay("walking", true, "elevated", "Keep walks short and earlier in the day.", true, false),
+      activityForDay("running", false, "high", "Running outdoors is not recommended.", true, true),
+      activityForDay("commute", true, "high", "Mask is recommended during travel.", true, false),
+    ],
+  },
+  {
+    date: dayDate(5).toISOString().slice(0, 10),
+    day_name: dayDate(5).toLocaleDateString("en-US", { weekday: "long" }),
+    representative_aqi: 159,
+    aqi_range: { min: 135, max: 183 },
+    category: "unhealthy",
+    trend: "worsening",
+    confidence_label: "lower confidence",
+    planning_hint: "Limit prolonged outdoor activity.",
+    best_outdoor_window: {
+      start: "07:25",
+      end: "08:35",
+      label: "A short morning slot may be relatively better",
+      confidence_label: "lower confidence",
+    },
+    activities: [
+      activityForDay("walking", true, "elevated", "Short walks may still be okay early morning.", true, false),
+      activityForDay("running", false, "high", "Avoid intense outdoor workouts.", true, true),
+      activityForDay("commute", true, "high", "Use a mask during commute.", true, false),
+    ],
+  },
+  {
+    date: dayDate(6).toISOString().slice(0, 10),
+    day_name: dayDate(6).toLocaleDateString("en-US", { weekday: "long" }),
+    representative_aqi: 152,
+    aqi_range: { min: 128, max: 176 },
+    category: "unhealthy_for_sensitive_groups",
+    trend: "improving",
+    confidence_label: "lower confidence",
+    planning_hint: "Conditions may improve slightly compared with Saturday.",
+    best_outdoor_window: {
+      start: "07:15",
+      end: "08:40",
+      label: "Morning window may be better",
+      confidence_label: "lower confidence",
+    },
+    activities: [
+      activityForDay("walking", true, "moderate", "A short morning walk may be manageable.", false, false),
+      activityForDay("running", false, "elevated", "Prefer indoor running.", true, false),
+      activityForDay("commute", true, "elevated", "Carry a mask for longer travel.", true, false),
+    ],
+  },
 ];
+
+export const mockWeeklyPlanner: WeeklyPlannerResponse = {
+  location: {
+    location_id: mockLocations[0].id,
+    name: "Delhi, Delhi",
+    city: "Delhi",
+    state: "Delhi",
+    country: "India",
+    lat: 28.6139,
+    lon: 77.209,
+  },
+  generated_at: new Date().toISOString(),
+  week_summary: {
+    overall_outlook: "Mixed air quality this week",
+    best_days: [mockPlannerDays[3].day_name, mockPlannerDays[2].day_name],
+    caution_days: [mockPlannerDays[0].day_name, mockPlannerDays[5].day_name],
+    summary_text:
+      "Air quality may improve around mid-week. Early mornings are generally safer for short outdoor activity.",
+    worst_day: mockPlannerDays[5].day_name,
+  },
+  days: mockPlannerDays,
+  watch_summary: {
+    title: "AirWise weekly outlook",
+    lines: [
+      `Best day: ${mockPlannerDays[3].day_name}`,
+      `Caution: ${mockPlannerDays[5].day_name} may have poor air quality`,
+      "Morning slots are generally safer this week",
+    ],
+  },
+};
 
 export const mockAlertPreference: AlertPreference = {
   id: "f512b6e6-c137-49cf-8c67-f10941155391",
@@ -159,5 +356,3 @@ export const mockAssistantResponse: AssistantExplainResponse = {
     "Air quality is currently in the unhealthy range, so short outdoor trips are okay only with precautions. Morning hours are likely to be cleaner than evening.",
   disclaimer: "My AirCast Assistant explains forecasts and recommendations; it does not predict AQI itself.",
 };
-
-

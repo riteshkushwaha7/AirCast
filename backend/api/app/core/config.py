@@ -42,6 +42,12 @@ class Settings(BaseSettings):
     cpcb_timeout_seconds: int = Field(default=20, ge=2, le=120)
     cpcb_default_limit: int = Field(default=500, ge=50, le=5000)
 
+    live_aqi_provider: Literal["cpcb", "openaq"] = "cpcb"
+    live_aqi_base_url: str = "https://api.data.gov.in/resource/placeholder-cpcb-aqi"
+    live_aqi_api_key: str | None = None
+    live_aqi_timeout: int = Field(default=20, ge=2, le=120)
+    live_aqi_default_limit: int = Field(default=1000, ge=10, le=5000)
+
     openaq_base_url: str = "https://api.openaq.org/v3"
     openaq_timeout_seconds: int = Field(default=25, ge=2, le=120)
     openaq_default_limit: int = Field(default=1000, ge=50, le=10000)
@@ -60,6 +66,11 @@ class Settings(BaseSettings):
     dataset_train_ratio: float = Field(default=0.7, ge=0.5, le=0.9)
     dataset_val_ratio: float = Field(default=0.15, ge=0.05, le=0.4)
     dataset_test_ratio: float = Field(default=0.15, ge=0.05, le=0.4)
+
+    default_train_city: str = "Delhi"
+    train_target_column: str = "aqi"
+    lookback_hours: int = Field(default=24, ge=6, le=240)
+    forecast_horizons: str = "4,6,12,24"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 

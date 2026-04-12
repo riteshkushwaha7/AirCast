@@ -1,99 +1,170 @@
-# AirWise / My AirCast
+# AirWise
 
-My AirCast is a production-style AQI forecasting and alert prototype built as a deployable monorepo.
+AirWise is a personalized AQI forecasting and alert platform prototype for web and mobile.  
+It helps users understand current and upcoming air quality in simple terms, with profile-aware recommendations and weekly planning support.
 
-## Stack
-- Frontend: Next.js 15 + TypeScript + Tailwind CSS
-- Backend: FastAPI + SQLAlchemy + Firebase integration stubs
-- Datastores: PostgreSQL (app data) + InfluxDB (time-series AQI)
-- ML: TensorFlow/Keras LSTM pipeline skeleton
-- Notifications: Firebase Cloud Messaging integration stubs
-- Infra: Docker Compose + service-specific Dockerfiles
+## Key Features
 
-## Monorepo Structure
+- Current AQI + 4h/6h/12h/24h forecast summaries
+- Personalized recommendation logic (health profile, sensitivity, activity)
+- Alert preference system + notification delivery stubs
+- 7-day planner with daily summaries, best-day highlights, and activity suitability
+- Ingestion and preprocessing pipeline for time-series AQI data
+- Mock/demo mode for stable presentations without live providers
+
+## Tech Stack
+
+- Web: Next.js (App Router), TypeScript, Tailwind CSS
+- Mobile: React Native (Expo), TypeScript, NativeWind
+- Backend: FastAPI, SQLAlchemy, Pydantic
+- Data: PostgreSQL (relational), InfluxDB (time-series)
+- Notifications: Firebase Cloud Messaging wrapper (mock/dry-run ready)
+- ML pipeline: Python scripts for ingestion, preprocessing, feature generation, planner projection hooks
+- Infra: Docker, Docker Compose
+
+## Repository Structure
+
 ```text
-frontend/web        # Next.js web app (mobile-first architecture)
-backend/api         # FastAPI backend APIs
-ml-pipeline         # Data + model training/inference/retraining pipeline
-infra               # Docker/K8s/monitoring configuration
-shared              # Shared contracts/types
-seed                # Mock and seed data
-docs                # Architecture, API and product documentation
+backend/
+  api/
+frontend/
+  web/
+  mobile/
+ml-pipeline/
+docs/
+seed/
+scripts/
+docker-compose.yml
 ```
 
-## Quick Start
-### 1) Prerequisites
-- Node.js 20+
-- Python 3.11+
-- Docker + Docker Compose
+## Environment Setup
 
-### 2) Environment
-Copy env templates and fill values:
+1. Copy root env:
 ```bash
 cp .env.example .env
+```
+
+2. Copy client envs:
+```bash
 cp frontend/web/.env.local.example frontend/web/.env.local
+cp frontend/mobile/.env.example frontend/mobile/.env
 cp backend/api/.env.example backend/api/.env
 ```
 
-### 3) Start with Docker
+## Run with Docker (Recommended Demo Path)
+
 ```bash
 docker compose up --build
 ```
-Services:
-- Web: http://localhost:3000
-- API: http://localhost:8000
-- API docs: http://localhost:8000/docs
-- InfluxDB: http://localhost:8086
-- Postgres: localhost:5432
 
-### 4) Local Dev (without Docker)
+Services:
+
+- Web: `http://localhost:3000`
+- API: `http://localhost:8000`
+- API docs: `http://localhost:8000/docs`
+- InfluxDB: `http://localhost:8086`
+- PostgreSQL: `localhost:5432`
+
+Health check helper:
+
+```bash
+python scripts/check_system_health.py
+```
+
+Optional shortcuts:
+
+```bash
+make dev
+make seed
+make health
+```
+
+## Local Run (Without Docker)
+
 Backend:
 ```bash
 cd backend/api
 python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\\Scripts\\activate
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 ```
 
-Frontend:
+Web:
 ```bash
 cd frontend/web
 npm install
 npm run dev
 ```
 
+Mobile:
+```bash
+cd frontend/mobile
+npm install
+npm run start
+```
+
 ML pipeline:
 ```bash
 cd ml-pipeline
-python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\\Scripts\\activate
 pip install -r requirements.txt
-python -m src.models.train_lstm --config config/train_config.yaml
+python ingestion/run_ingestion.py --city Delhi --limit 100
+python preprocessing/clean_timeseries.py --city Delhi --lookback-hours 336
+python forecasting/weekly_forecast.py --days 7
 ```
 
-## Product Surface
-Screens implemented:
-1. Landing
-2. Login / Signup
-3. Onboarding (location + health profile)
-4. Dashboard
-5. Forecast details
-6. Notification preferences
-7. Saved locations
-8. Profile / settings
-9. About AQI
-10. Assistant (LLM-safe stub)
+## Demo / Mock Mode
 
-## Core Behaviors Included
-- Current AQI and multi-horizon forecast (4h, 6h, 12h, 24h)
-- 7-day planning outlook (daily categories/trends)
-- Health-profile-aware recommendation engine
-- Alert engine for thresholds, worsening trend, morning summary, best-time window
-- FCM device token registration and notification dispatch stubs
-- InfluxDB time-series write/query interface for AQI ingestion
+Use these values for stable demo behavior:
 
-## Notes
-- This prototype is starter-quality but production-oriented in architecture.
-- Firebase Auth + FCM and external AQI data feeds are integrated as stubs/interfaces for secure environment-driven rollout.
-- LLM assistant is explicitly separated from AQI prediction logic.
+- `ALLOW_MOCK_AUTH=true`
+- `SOURCE_MOCK_MODE=true`
+- `NEXT_PUBLIC_ENABLE_MOCK_FALLBACK=true`
+- `EXPO_PUBLIC_ENABLE_MOCK_FALLBACK=true`
+
+Seed demo data:
+```bash
+python scripts/seed_demo_data.py
+```
+
+Demo startup shortcut:
+```bash
+bash scripts/run_demo_mode.sh
+# or PowerShell:
+powershell -ExecutionPolicy Bypass -File scripts/run_demo_mode.ps1
+```
+
+## Sample Demo Flow
+
+1. Open landing page (`/`)
+2. Log in with demo auth mode
+3. Show onboarding/profile setup
+4. Show dashboard AQI + short-horizon forecast
+5. Show recommendation + alert preferences
+6. Open weekly planner and highlight best/caution days
+7. Mention backend route coverage and data stores
+8. Mention ML ingestion/preprocessing + planner projection hooks
+
+Detailed presenter script: [docs/demo-script.md](docs/demo-script.md)
+
+## Screenshots
+
+Add screenshots/gifs here before final submission:
+
+- `docs/assets/landing.png`
+- `docs/assets/dashboard.png`
+- `docs/assets/planner.png`
+- `docs/assets/mobile-planner.png`
+
+## Future Scope
+
+- Live CPCB/OGD production ingestion credentials
+- Model-based multi-step forecast serving
+- Scheduled jobs for daily/weekly summary pushes
+- Rich analytics and historical trend comparisons
+
+## Contributor Notes
+
+- Keep business logic in services/domain modules (not route handlers)
+- Keep mock fallback available for demo resilience
+- Prefer small, focused PR-style changes over broad refactors

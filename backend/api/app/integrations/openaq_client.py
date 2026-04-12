@@ -51,6 +51,34 @@ class OpenAQClient:
         self.mock_mode = settings.source_mock_mode
         self.default_limit = settings.openaq_default_limit
 
+    # Live adapter compatibility hooks ---------------------------------------
+    def fetch_current_aqi(self, limit: int | None = None) -> list[NormalizedAQIRecord]:
+        end_at = datetime.now(tz=UTC)
+        start_at = end_at - timedelta(hours=2)
+        # OpenAQ live mode is approximated from recent observations.
+        records = self.fetch_historical_records(
+            city="Delhi",
+            start_at=start_at,
+            end_at=end_at,
+            limit=limit or self.default_limit,
+        )
+        return records
+
+    def fetch_city_current_aqi(self, city_name: str) -> NormalizedAQIRecord | None:
+        end_at = datetime.now(tz=UTC)
+        start_at = end_at - timedelta(hours=2)
+        records = self.fetch_historical_records(city=city_name, start_at=start_at, end_at=end_at, limit=48)
+        if not records:
+            return None
+        return max(records, key=lambda item: item.observed_at)
+
+    def fetch_station_current_aqi(self, station_id: str) -> NormalizedAQIRecord | None:
+        records = self.fetch_current_aqi(limit=200)
+        station_records = [item for item in records if (item.station_id or "").lower() == station_id.lower()]
+        if not station_records:
+            return None
+        return max(station_records, key=lambda item: item.observed_at)
+
     def fetch_historical_payload(
         self,
         city: str,

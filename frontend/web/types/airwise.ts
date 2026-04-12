@@ -19,6 +19,9 @@ export type AQICategory =
   | "very_unhealthy"
   | "hazardous";
 
+export type PlannerTrend = "improving" | "stable" | "worsening";
+export type PlannerConfidenceLabel = "higher confidence" | "moderate confidence" | "lower confidence";
+
 export interface User {
   id: string;
   firebase_uid: string;
@@ -104,15 +107,6 @@ export interface ForecastCurrentResponse {
   horizons: ForecastPoint[];
 }
 
-export interface WeeklyPlannerDay {
-  day: string;
-  avg_aqi: number;
-  category: AQICategory;
-  trend: string;
-  planning_hint: string;
-  best_window: string;
-}
-
 export interface WeeklyForecastResponse {
   location_id: string | null;
   generated_at: string;
@@ -122,6 +116,99 @@ export interface WeeklyForecastResponse {
     category: AQICategory;
     trend: string;
   }>;
+}
+
+export interface PlannerLocationSummary {
+  location_id: string | null;
+  name: string;
+  city: string;
+  state: string | null;
+  country: string;
+  lat: number | null;
+  lon: number | null;
+}
+
+export interface PlannerAqiRange {
+  min: number;
+  max: number;
+}
+
+export interface PlannerBestOutdoorWindow {
+  start: string | null;
+  end: string | null;
+  label: string;
+  confidence_label: PlannerConfidenceLabel;
+}
+
+export interface PlannerActivitySuitability {
+  activity_type: ActivityType;
+  suitable: boolean;
+  caution_level: string;
+  note: string;
+  mask_advised: boolean;
+  avoid_outdoor: boolean;
+}
+
+export interface PlannerDayPlan {
+  date: string;
+  day_name: string;
+  representative_aqi: number;
+  aqi_range: PlannerAqiRange;
+  category: AQICategory;
+  trend: PlannerTrend;
+  confidence_label: PlannerConfidenceLabel;
+  planning_hint: string;
+  best_outdoor_window: PlannerBestOutdoorWindow | null;
+  activities: PlannerActivitySuitability[];
+}
+
+export interface PlannerWeekSummary {
+  overall_outlook: string;
+  best_days: string[];
+  caution_days: string[];
+  summary_text: string;
+  worst_day: string | null;
+}
+
+export interface PlannerWatchSummary {
+  title: string;
+  lines: string[];
+}
+
+export interface WeeklyPlannerResponse {
+  location: PlannerLocationSummary;
+  generated_at: string;
+  week_summary: PlannerWeekSummary;
+  days: PlannerDayPlan[];
+  watch_summary: PlannerWatchSummary;
+}
+
+export interface PlannerBestDaysResponse {
+  location_id: string | null;
+  generated_at: string;
+  overall_outlook: string;
+  best_days: string[];
+  caution_days: string[];
+  worst_day: string | null;
+}
+
+export interface PlannerActivityDay {
+  date: string;
+  day_name: string;
+  category: AQICategory;
+  representative_aqi: number;
+  confidence_label: PlannerConfidenceLabel;
+  best_outdoor_window: PlannerBestOutdoorWindow | null;
+  suitable: boolean;
+  caution_level: string;
+  note: string;
+}
+
+export interface PlannerActivityResponse {
+  location_id: string | null;
+  activity_type: ActivityType;
+  generated_at: string;
+  days: PlannerActivityDay[];
 }
 
 export interface BestWindowResponse {

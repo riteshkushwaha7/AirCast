@@ -40,6 +40,16 @@ class AQICategory(StrEnum):
 
 
 class NotificationType(StrEnum):
+    THRESHOLD_CROSSED = "threshold_crossed"
+    CATEGORY_WORSENED = "category_worsened"
+    MASK_RECOMMENDED = "mask_recommended"
+    AVOID_OUTDOOR = "avoid_outdoor"
+    MORNING_SUMMARY = "morning_summary"
+    BEST_OUTDOOR_WINDOW = "best_outdoor_window"
+    WEEKLY_PLANNER_SUMMARY = "weekly_planner_summary"
+    TEST_NOTIFICATION = "test_notification"
+
+    # Legacy aliases maintained for backward compatibility in old logs/routes.
     THRESHOLD_ALERT = "threshold_alert"
     WORSENING_ALERT = "worsening_alert"
     DAILY_SUMMARY = "daily_summary"

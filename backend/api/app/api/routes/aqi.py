@@ -48,7 +48,7 @@ def get_current_by_coordinates(
 ) -> AQICurrentResponse:
     validate_latitude(lat)
     validate_longitude(lon)
-    reading = aqi_service.get_current_fallback()
+    reading = aqi_service.get_current_by_coordinates(latitude=lat, longitude=lon)
     return AQICurrentResponse(location_id=None, reading=AQIReading(**reading))
 
 

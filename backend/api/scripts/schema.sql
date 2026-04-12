@@ -95,6 +95,7 @@ CREATE TABLE IF NOT EXISTS notification_logs (
   title VARCHAR(120) NOT NULL,
   body TEXT NOT NULL,
   payload_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+  provider_response_json JSONB,
   status VARCHAR(32) NOT NULL,
   sent_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
