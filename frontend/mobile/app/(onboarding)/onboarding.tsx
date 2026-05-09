@@ -5,14 +5,15 @@ import { router } from "expo-router";
 import { AppHeader } from "../../components/layout/AppHeader";
 import { AppTextInput, PrimaryButton, SectionContainer, ToggleItem } from "../../components/ui";
 import { HEALTH_PROFILES, ROUTES, SENSITIVITY_LEVELS } from "../../constants/app";
-import { completeOnboarding } from "../../services/auth";
+import { completeOnboarding as completeAuthOnboarding } from "../../services/auth";
+import { createLocation, updateProfile, completeOnboarding as completeApiOnboarding } from "../../services/api";
 import { registerForPushNotificationsAsync, savePushToken } from "../../services/notifications";
 import type { ActivityType, HealthProfile, SensitivityLevel } from "../../types/airwise";
 
 const activityOptions: ActivityType[] = ["walking", "running", "cycling", "commute", "outdoor_sports"];
 
 export default function OnboardingScreen() {
-  const [location, setLocation] = useState("Delhi");
+  const [city, setCity] = useState("Delhi");
   const [label, setLabel] = useState("Home");
   const [healthProfile, setHealthProfile] = useState<HealthProfile>("allergy_sensitive");
   const [sensitivity, setSensitivity] = useState<SensitivityLevel>("sensitive");
@@ -24,22 +25,32 @@ export default function OnboardingScreen() {
     setActivities((current) => (current.includes(activity) ? current.filter((item) => item !== activity) : [...current, activity]));
   };
 
-  const canContinue = useMemo(() => location.length > 0 && label.length > 0, [location, label]);
+  const canContinue = useMemo(() => city.length > 0 && label.length > 0, [city, label]);
 
   const onComplete = async () => {
     if (!canContinue) return;
     setSaving(true);
 
-    if (notificationsEnabled) {
-      const token = await registerForPushNotificationsAsync();
-      if (token) {
-        await savePushToken(token);
+    try {
+      if (notificationsEnabled) {
+        const token = await registerForPushNotificationsAsync();
+        if (token) {
+          await savePushToken(token);
+        }
       }
-    }
 
-    await completeOnboarding();
-    setSaving(false);
-    router.replace(ROUTES.home);
+      await Promise.all([
+        createLocation({ label, city, country: "India", is_primary: true }),
+        updateProfile({ health_profile: healthProfile, sensitivity_level: sensitivity, preferred_activity_types: activities }),
+      ]);
+      await completeApiOnboarding();
+      await completeAuthOnboarding();
+      setSaving(false);
+      router.replace(ROUTES.home);
+    } catch (err) {
+      console.error(err);
+      setSaving(false);
+    }
   };
 
   return (
@@ -49,7 +60,7 @@ export default function OnboardingScreen() {
       <SectionContainer className="mb-3">
         <Text className="text-sm font-semibold text-ink">Location</Text>
         <View className="mt-3 gap-2">
-          <AppTextInput value={location} onChangeText={setLocation} placeholder="City" />
+          <AppTextInput value={city} onChangeText={setCity} placeholder="City" />
           <AppTextInput value={label} onChangeText={setLabel} placeholder="Label (Home / Office)" />
         </View>
       </SectionContainer>

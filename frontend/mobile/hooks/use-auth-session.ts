@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+import { onAuthStateChanged } from "firebase/auth";
 
+import { firebaseAuth } from "../services/firebase";
 import type { AuthSession } from "../services/auth";
 import { getSession } from "../services/auth";
 
@@ -8,21 +10,22 @@ export function useAuthSession() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let active = true;
-
-    const load = async () => {
-      const payload = await getSession();
-      if (active) {
-        setSession(payload);
-        setLoading(false);
+    const unsubscribe = onAuthStateChanged(firebaseAuth, async (user) => {
+      if (user) {
+        setSession({
+          userId: user.uid,
+          email: user.email ?? "",
+          fullName: user.displayName ?? "",
+          onboarded: true,
+        });
+      } else {
+        const stored = await getSession();
+        setSession(stored);
       }
-    };
+      setLoading(false);
+    });
 
-    void load();
-
-    return () => {
-      active = false;
-    };
+    return unsubscribe;
   }, []);
 
   return { session, loading };

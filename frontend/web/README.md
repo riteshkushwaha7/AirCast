@@ -26,7 +26,6 @@ cp .env.local.example .env.local
 Important variables:
 
 - `NEXT_PUBLIC_API_BASE_URL`
-- `NEXT_PUBLIC_ENABLE_MOCK_FALLBACK`
 
 ## Run
 
@@ -49,10 +48,3 @@ or from root:
 docker compose up --build web
 ```
 
-## Demo Stability
-
-Set:
-
-- `NEXT_PUBLIC_ENABLE_MOCK_FALLBACK=true`
-
-This keeps pages usable if backend data is unavailable during demo.

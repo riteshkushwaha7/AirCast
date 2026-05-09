@@ -20,64 +20,6 @@ class CPCBAQIReading:
     timestamp: datetime
 
 
-MOCK_CPCB_PAYLOAD: list[dict[str, Any]] = [
-    {
-        "station_id": "DEL-ANANDVIHAR-001",
-        "station_name": "Anand Vihar",
-        "city": "Delhi",
-        "state": "Delhi",
-        "country": "India",
-        "latitude": 28.646,
-        "longitude": 77.315,
-        "timestamp": "2026-04-07T07:00:00+05:30",
-        "aqi": 182,
-        "pm25": 132,
-        "pm10": 208,
-        "no2": 42,
-        "so2": 18,
-        "co": 1.2,
-        "o3": 36,
-        "nh3": 22,
-    },
-    {
-        "station_id": "DEL-RKPURAM-002",
-        "station_name": "RK Puram",
-        "city": "Delhi",
-        "state": "Delhi",
-        "country": "India",
-        "latitude": 28.563,
-        "longitude": 77.186,
-        "timestamp": "2026-04-07T07:00:00+05:30",
-        "aqi": 168,
-        "pm25": 118,
-        "pm10": 188,
-        "no2": 33,
-        "so2": 15,
-        "co": 0.9,
-        "o3": 28,
-        "nh3": 20,
-    },
-    {
-        "station_id": "BLR-SILKBOARD-010",
-        "station_name": "Silk Board",
-        "city": "Bengaluru",
-        "state": "Karnataka",
-        "country": "India",
-        "latitude": 12.917,
-        "longitude": 77.623,
-        "timestamp": "2026-04-07T07:00:00+05:30",
-        "aqi": 92,
-        "pm25": 47,
-        "pm10": 78,
-        "no2": 24,
-        "so2": 10,
-        "co": 0.6,
-        "o3": 24,
-        "nh3": 14,
-    },
-]
-
-
 class CPCBClient:
     """Adapter for CPCB/data.gov.in AQI feeds with normalized output."""
 
@@ -93,7 +35,7 @@ class CPCBClient:
 
         # Live AQI config (data.gov.in / CPCB endpoint)
         self.live_base_url = settings.live_aqi_base_url.rstrip("/")
-        self.live_api_key = settings.live_aqi_api_key
+        self.live_aqi_api_key = settings.live_aqi_api_key
         self.live_timeout_seconds = settings.live_aqi_timeout
         self.live_default_limit = settings.live_aqi_default_limit
 
@@ -102,7 +44,8 @@ class CPCBClient:
     # -------------------------------------------------------------------------
     def fetch_current_payload(self, city: str | None = None, limit: int | None = None) -> list[dict[str, Any]]:
         if self.mock_mode:
-            return self._mock_payload(city=city, limit=limit)
+            logger.info("CPCB mock mode enabled but mock data is deprecated. Returning empty.")
+            return []
 
         try:
             payload = self._fetch_json_payload(
@@ -114,8 +57,8 @@ class CPCBClient:
             )
             return self._extract_records(payload)
         except Exception as exc:
-            logger.warning("CPCB ingestion fetch failed, falling back to mock payload: %s", exc)
-            return self._mock_payload(city=city, limit=limit)
+            logger.error("CPCB ingestion fetch failed: %s", exc)
+            raise
 
     def fetch_current_records(self, city: str | None = None, limit: int | None = None) -> list[NormalizedAQIRecord]:
         payload = self.fetch_current_payload(city=city, limit=limit)
@@ -125,9 +68,6 @@ class CPCBClient:
     # Live AQI adapter methods
     # -------------------------------------------------------------------------
     def fetch_current_aqi(self, limit: int | None = None) -> list[NormalizedAQIRecord]:
-        if self.mock_mode:
-            return self.fetch_current_records(limit=limit)
-
         try:
             payload = self._fetch_json_payload(
                 url=self.live_base_url,
@@ -141,9 +81,9 @@ class CPCBClient:
             if normalized:
                 return normalized
         except Exception as exc:
-            logger.warning("Live CPCB/data.gov.in fetch failed, fallback to mock data: %s", exc)
+            logger.warning("Live CPCB/data.gov.in fetch failed: %s", exc)
 
-        return self.fetch_current_records(limit=limit)
+        return []
 
     def fetch_city_current_aqi(self, city_name: str) -> NormalizedAQIRecord | None:
         records = self.fetch_current_aqi()
@@ -188,13 +128,12 @@ class CPCBClient:
     ) -> Any:
         params: dict[str, Any] = {"limit": limit, "format": "json"}
         if city:
-            params["city"] = city
+            params["filters[city]"] = city
 
         headers = {"accept": "application/json"}
-        if include_api_key and self.live_api_key:
-            # data.gov.in commonly accepts either header or query style API key.
-            headers["api-key"] = self.live_api_key
-            params["api-key"] = self.live_api_key
+        if include_api_key and self.live_aqi_api_key:
+            # data.gov.in requires the api-key as a query parameter
+            params["api-key"] = self.live_aqi_api_key
 
         with httpx.Client(timeout=timeout) as client:
             response = client.get(url, params=params, headers=headers)

@@ -7,10 +7,10 @@ import { SectionCard } from "@/components/cards/section-card";
 import { PageHeader } from "@/components/layout/page-header";
 import { Input } from "@/components/ui/input";
 import { getAlertPreferences } from "@/lib/api";
-import { mockAlertPreference } from "@/lib/mock";
+import type { AlertPreference } from "@/types/airwise";
 
 export default function AlertsPage() {
-  const [prefs, setPrefs] = useState(mockAlertPreference);
+  const [prefs, setPrefs] = useState<AlertPreference | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -23,6 +23,14 @@ export default function AlertsPage() {
       mounted = false;
     };
   }, []);
+
+  if (!prefs) {
+    return (
+      <div className="space-y-4">
+        <PageHeader title="Alerts & settings" subtitle="Choose when and how My AirCast should notify you." />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">

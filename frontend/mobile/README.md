@@ -32,7 +32,6 @@ cp .env.example .env
 Main variables:
 
 - `EXPO_PUBLIC_API_BASE_URL`
-- `EXPO_PUBLIC_ENABLE_MOCK_FALLBACK`
 
 ## Run
 
@@ -49,9 +48,6 @@ npm run ios
 npm run web
 ```
 
-## Demo Stability
-
-Keep `EXPO_PUBLIC_ENABLE_MOCK_FALLBACK=true` for reliable demo behavior when backend data is unavailable.
 
 ## Notes
 

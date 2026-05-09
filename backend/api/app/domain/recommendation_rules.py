@@ -41,6 +41,7 @@ def build_recommendation_copy(
         AQICategory.UNHEALTHY: "Air quality is unhealthy right now.",
         AQICategory.VERY_UNHEALTHY: "Air quality is very unhealthy right now.",
         AQICategory.HAZARDOUS: "Air quality is hazardous right now.",
+        AQICategory.UNAVAILABLE: "Live air quality data is currently unavailable.",
     }[category]
 
     parts = [base, trend_note, activity_guidance.activity_guidance]

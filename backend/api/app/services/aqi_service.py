@@ -1,3 +1,4 @@
+import logging
 from datetime import UTC, datetime
 from math import asin, cos, radians, sin, sqrt
 
@@ -5,8 +6,9 @@ from app.integrations.live_aqi_adapter import LiveAQIAdapter
 from app.integrations.live_aqi_factory import get_live_aqi_adapter
 from app.repositories.aqi_timeseries_repository import AQITimeSeriesRepository
 from app.schemas.ingestion import NormalizedAQIRecord
-from app.services.mock_data import SAMPLE_CURRENT_AQI, sample_history
 from app.utils.validators import aqi_to_category
+
+logger = logging.getLogger(__name__)
 
 
 class AQIService:
@@ -19,32 +21,54 @@ class AQIService:
         self.live_aqi_adapter = live_aqi_adapter or get_live_aqi_adapter()
 
     def get_current_by_city(self, city: str, state: str | None = None, country: str = "India") -> dict:
-        # 1) Try live provider first.
         try:
             live = self.live_aqi_adapter.fetch_city_current_aqi(city)
             if live is not None and live.aqi is not None:
+                logger.info("[AQI] WAQI returned aqi=%.1f for city=%s station=%s", live.aqi, city, live.station_id)
                 self._archive_live_record(live)
-                return self._to_reading(live, fallback_city=city, fallback_state=state, fallback_country=country)
-        except Exception:
-            # Gracefully continue to cache fallback.
-            pass
+                reading = self._to_reading(live, fallback_city=city, fallback_state=state, fallback_country=country)
+                logger.info("[AQI] get_current_by_city returning: aqi=%s category=%s city=%s", reading["aqi"], reading["category"], reading["city"])
+                return reading
+            else:
+                logger.warning("[AQI] WAQI returned None or no aqi for city=%s (record=%s)", city, live)
+        except Exception as exc:
+            logger.warning("[AQI] Live fetch failed for city=%s: %s", city, exc, exc_info=True)
 
-        # 2) Use latest archived value from InfluxDB.
-        influx_value = self.timeseries_repository.get_latest_aqi_for_city(city)
-        if influx_value is not None:
-            return {
-                "timestamp": datetime.now(tz=UTC),
-                "aqi": influx_value,
-                "category": aqi_to_category(influx_value),
-                "city": city,
-                "state": state,
-                "country": country,
-            }
+        try:
+            influx_value = self.timeseries_repository.get_latest_aqi_for_city(city)
+            if influx_value is not None:
+                logger.info("[AQI] Using InfluxDB fallback aqi=%.1f for city=%s", influx_value, city)
+                return {
+                    "timestamp": datetime.now(tz=UTC),
+                    "aqi": influx_value,
+                    "category": aqi_to_category(influx_value),
+                    "city": city,
+                    "state": state,
+                    "country": country,
+                }
+        except Exception as exc:
+            logger.warning("[AQI] InfluxDB fallback failed for city=%s: %s", city, exc)
 
-        # 3) Demo fallback if live/cache unavailable.
-        return self.get_current_fallback()
+        logger.warning("[AQI] All sources failed for city=%s — returning unavailable", city)
+        return self._unavailable_reading(city=city, state=state, country=country)
 
     def get_current_by_coordinates(self, latitude: float, longitude: float) -> dict:
+        """Fetch AQI by coordinates using WAQI geo endpoint."""
+        try:
+            if hasattr(self.live_aqi_adapter, 'fetch_by_coordinates'):
+                live = self.live_aqi_adapter.fetch_by_coordinates(latitude, longitude)
+                if live is not None and live.aqi is not None:
+                    logger.info("[AQI] WAQI geo returned aqi=%.1f station=%s lat=%.4f lng=%.4f", live.aqi, live.station_id, latitude, longitude)
+                    self._archive_live_record(live)
+                    reading = self._to_reading(live)
+                    logger.info("[AQI] get_current_by_coordinates returning: aqi=%s category=%s city=%s", reading["aqi"], reading["category"], reading["city"])
+                    return reading
+                else:
+                    logger.warning("[AQI] WAQI geo returned None or no aqi for lat=%.4f lng=%.4f (record=%s)", latitude, longitude, live)
+        except Exception as exc:
+            logger.warning("[AQI] WAQI geo lookup failed for lat=%.4f lng=%.4f: %s", latitude, longitude, exc, exc_info=True)
+
+        # Fallback: search through cached records
         try:
             records = self.live_aqi_adapter.fetch_current_aqi(limit=250)
             candidates = [
@@ -64,32 +88,38 @@ class AQIService:
                 )
                 self._archive_live_record(nearest)
                 return self._to_reading(nearest)
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.warning("[AQI] Multi-city fallback failed for coordinates: %s", exc)
 
-        return self.get_current_fallback()
+        logger.warning("[AQI] All sources failed for lat=%.4f lng=%.4f — returning unavailable", latitude, longitude)
+        return self._unavailable_reading()
 
     def get_current_fallback(self) -> dict:
+        return self._unavailable_reading(city="Delhi", country="India")
+
+    @staticmethod
+    def _unavailable_reading(
+        city: str = "Unknown",
+        state: str | None = None,
+        country: str = "India",
+    ) -> dict:
         return {
             "timestamp": datetime.now(tz=UTC),
-            "aqi": SAMPLE_CURRENT_AQI["aqi"],
-            "category": SAMPLE_CURRENT_AQI["category"],
-            "city": SAMPLE_CURRENT_AQI["city"],
-            "state": SAMPLE_CURRENT_AQI["state"],
-            "country": SAMPLE_CURRENT_AQI["country"],
+            "aqi": 0.0,
+            "category": "unavailable",
+            "city": city,
+            "state": state,
+            "country": country,
         }
 
     def get_history_by_city(self, city: str, hours: int = 24) -> list[dict]:
         points = self.timeseries_repository.get_city_history(city=city, hours=hours)
-        if points:
-            return points
-        return sample_history(hours=hours)
+        return points or []
 
     def _archive_live_record(self, record: NormalizedAQIRecord) -> None:
         try:
             self.timeseries_repository.write_raw_records([record])
         except Exception:
-            # Archival should not block current AQI read.
             pass
 
     @staticmethod

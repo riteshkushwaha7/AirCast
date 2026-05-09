@@ -1,3 +1,5 @@
+import firebase_admin
+from firebase_admin import auth
 from dataclasses import dataclass
 
 from app.core.config import get_settings
@@ -11,10 +13,6 @@ class FirebaseTokenClaims:
 
 
 def verify_firebase_token(token: str) -> FirebaseTokenClaims:
-    """Wrapper stub for Firebase token verification.
-
-    In production, replace this with firebase_admin.auth.verify_id_token.
-    """
     settings = get_settings()
 
     if settings.allow_mock_auth and token.startswith("dev-"):
@@ -23,4 +21,11 @@ def verify_firebase_token(token: str) -> FirebaseTokenClaims:
     if settings.allow_mock_auth and token == "mock-token":
         return FirebaseTokenClaims(uid="demo-firebase-uid", email="demo@airwise.app")
 
-    raise UnauthorizedException("Invalid Firebase token")
+    try:
+        decoded_token = auth.verify_id_token(token)
+        return FirebaseTokenClaims(
+            uid=decoded_token["uid"],
+            email=decoded_token.get("email"),
+        )
+    except Exception as e:
+        raise UnauthorizedException(f"Invalid Firebase token: {str(e)}")

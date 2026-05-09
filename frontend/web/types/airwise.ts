@@ -15,6 +15,7 @@ export type AQICategory =
   | "good"
   | "moderate"
   | "unhealthy_for_sensitive_groups"
+  | "unavailable"
   | "unhealthy"
   | "very_unhealthy"
   | "hazardous";
@@ -231,9 +232,16 @@ export interface RecommendationResponse {
   risk_level: string;
 }
 
-export interface AssistantExplainResponse {
-  explanation: string;
-  disclaimer: string;
+export interface PredictionRunResponse {
+  location_id: string;
+  city: string;
+  generated_at: string;
+  horizons: Array<{
+    horizon_hours: number;
+    predicted_aqi: number;
+    category: string;
+    target_timestamp: string;
+  }>;
 }
 
 export interface AppErrorState {

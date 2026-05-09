@@ -1,4 +1,4 @@
-import type { AQICategory, HealthProfile, SensitivityLevel } from "../types/airwise";
+import type { ActivityType, AQICategory, HealthProfile, SensitivityLevel } from "../types/airwise";
 
 export const ROUTES = {
   login: "/(auth)/login",
@@ -8,6 +8,7 @@ export const ROUTES = {
   forecast: "/(tabs)/forecast",
   planner: "/(tabs)/planner",
   alerts: "/(tabs)/alerts",
+  locations: "/(tabs)/locations",
   profile: "/(tabs)/profile"
 } as const;
 
@@ -23,6 +24,14 @@ export const SENSITIVITY_LEVELS: { value: SensitivityLevel; label: string }[] = 
   { value: "normal", label: "Normal" },
   { value: "sensitive", label: "Sensitive" },
   { value: "highly_sensitive", label: "Highly sensitive" }
+];
+
+export const ACTIVITY_TYPES: { value: ActivityType; label: string }[] = [
+  { value: "walking", label: "Walking" },
+  { value: "running", label: "Running" },
+  { value: "cycling", label: "Cycling" },
+  { value: "commute", label: "Commute" },
+  { value: "outdoor_sports", label: "Outdoor sports" }
 ];
 
 export const AQI_CATEGORY_META: Record<AQICategory, { label: string; tone: string; hint: string }> = {

@@ -15,8 +15,8 @@ from app.repositories.profile_repository import ProfileRepository
 from app.repositories.user_repository import UserRepository
 from app.services.alert_service import AlertService
 from app.services.aqi_service import AQIService
-from app.services.assistant_service import AssistantService
 from app.services.best_window_service import BestWindowService
+from app.services.prediction_service import PredictionService
 from app.services.dataset_service import DatasetService
 from app.services.forecast_service import ForecastService
 from app.services.feature_service import FeatureService
@@ -95,8 +95,11 @@ def get_dataset_service(
     return DatasetService(timeseries_repo)
 
 
-def get_assistant_service() -> AssistantService:
-    return AssistantService()
+def get_prediction_service(
+    influx_provider: InfluxProvider = Depends(get_influx_provider),
+) -> PredictionService:
+    timeseries_repo = AQITimeSeriesRepository(influx_provider)
+    return PredictionService(timeseries_repo)
 
 
 def get_recommendation_service() -> RecommendationService:

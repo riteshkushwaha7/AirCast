@@ -1,6 +1,9 @@
+import logging
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from typing import Any, Iterable, Sequence
+
+logger = logging.getLogger(__name__)
 
 try:
     from influxdb_client import Point
@@ -21,6 +24,7 @@ except ModuleNotFoundError:  # pragma: no cover - fallback for lightweight unit 
 from app.core.config import get_settings
 from app.db.influx import InfluxProvider
 from app.schemas.ingestion import NormalizedAQIRecord, ProcessedAQIRecord
+from app.utils.validators import aqi_to_category
 
 settings = get_settings()
 
@@ -195,6 +199,73 @@ class AQITimeSeriesRepository:
             points.append(point)
 
         self.influx_provider.write_api().write(bucket=self.bucket, record=points)
+        return len(points)
+
+    def write_waqi_forecast_days(self, city: str, forecasts: list[Any], generated_at: datetime | None = None) -> int:
+        """Write WAQI daily forecast data to the predictions measurement.
+
+        Each WAQIDailyForecast day is stored as an AQIPredictionRecord with:
+        - model_name=waqi_daily_forecast, source=waqi
+        - forecast_horizon = hours from today (6 for today, 24 for tomorrow, etc.)
+        - predicted_aqi = avg_pm25 (primary AQI proxy in AQI sub-index units)
+        """
+        if not forecasts:
+            return 0
+
+        now = _utc(generated_at or datetime.now(tz=UTC))
+        today = now.date()
+        points: list[Point] = []
+
+        for f in forecasts:
+            try:
+                from datetime import date as date_type
+                forecast_date = date_type.fromisoformat(f.day)
+            except (ValueError, AttributeError, TypeError):
+                continue
+
+            day_offset = (forecast_date - today).days
+            horizon_hours = max(6, day_offset * 24)
+
+            # pm25 avg is in AQI sub-index units — use as predicted_aqi
+            predicted_aqi = f.avg_pm25 if f.avg_pm25 is not None else f.avg_pm10
+            if predicted_aqi is None:
+                continue
+            predicted_aqi = min(float(predicted_aqi), 500.0)
+
+            try:
+                category = aqi_to_category(predicted_aqi).value
+            except Exception:
+                category = "unknown"
+
+            # Noon of the target day as target timestamp
+            target_ts = datetime(forecast_date.year, forecast_date.month, forecast_date.day, 12, 0, 0, tzinfo=UTC)
+
+            point = Point(self.measure_predictions)
+            point.tag("model_name", "waqi_daily_forecast")
+            point.tag("city", city)
+            point.tag("forecast_horizon", str(horizon_hours))
+            point.tag("source", "waqi")
+            point.field("predicted_aqi", float(predicted_aqi))
+            point.field("predicted_category", category)
+            point.field("target_timestamp", target_ts.isoformat())
+            point.field("generated_timestamp", now.isoformat())
+            if f.avg_pm25 is not None:
+                point.field("avg_pm25", float(f.avg_pm25))
+            if f.min_pm25 is not None:
+                point.field("min_pm25", float(f.min_pm25))
+            if f.max_pm25 is not None:
+                point.field("max_pm25", float(f.max_pm25))
+            if f.avg_pm10 is not None:
+                point.field("avg_pm10", float(f.avg_pm10))
+            if f.avg_o3 is not None:
+                point.field("avg_o3", float(f.avg_o3))
+            point.field("forecast_day", f.day)
+            point.time(now)
+            points.append(point)
+
+        if points:
+            self.influx_provider.write_api().write(bucket=self.bucket, record=points)
+            logger.info("[InfluxDB] Wrote %d WAQI forecast days for city=%s", len(points), city)
         return len(points)
 
     def write_model_metrics(self, tags: dict[str, Any], fields: dict[str, Any], timestamp: datetime) -> None:
@@ -431,6 +502,7 @@ from(bucket: "{self.bucket}")
                     "generated_timestamp",
                     "target_timestamp",
                     "predicted_category",
+                    "forecast_day",
                     "pm25",
                     "pm10",
                     "no2",
@@ -438,6 +510,11 @@ from(bucket: "{self.bucket}")
                     "co",
                     "o3",
                     "nh3",
+                    "avg_pm25",
+                    "min_pm25",
+                    "max_pm25",
+                    "avg_pm10",
+                    "avg_o3",
                     "latitude",
                     "longitude",
                     "rolling_avg_3h",

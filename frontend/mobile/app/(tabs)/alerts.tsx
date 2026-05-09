@@ -8,7 +8,7 @@ import { AppTextInput } from "../../components/ui/AppTextInput";
 export default function AlertsScreen() {
   const { settings, setSettings, loading, save, saving } = useAlertSettings();
 
-  if (loading) {
+  if (loading || !settings) {
     return (
       <ScrollView className="flex-1 bg-surface" contentContainerClassName="px-5 pb-10 pt-12">
         <LoadingState label="Loading alerts" />
@@ -27,6 +27,9 @@ export default function AlertsScreen() {
         <ToggleItem title="12h forecast alert" description="Half-day planning alert" enabled={settings.alert_12h} onToggle={() => setSettings((prev) => ({ ...prev, alert_12h: !prev.alert_12h }))} />
         <ToggleItem title="24h forecast alert" description="Next-day caution alert" enabled={settings.alert_24h} onToggle={() => setSettings((prev) => ({ ...prev, alert_24h: !prev.alert_24h }))} />
         <ToggleItem title="Daily summary" description="Morning AQI summary" enabled={settings.daily_summary_enabled} onToggle={() => setSettings((prev) => ({ ...prev, daily_summary_enabled: !prev.daily_summary_enabled }))} />
+        <ToggleItem title="Best time alert" description="Notify when best outdoor window arrives" enabled={settings.best_time_alert_enabled} onToggle={() => setSettings((prev) => ({ ...prev, best_time_alert_enabled: !prev.best_time_alert_enabled }))} />
+        <ToggleItem title="Mask recommendation" description="Alert when mask is advised" enabled={settings.notify_for_mask_recommendation} onToggle={() => setSettings((prev) => ({ ...prev, notify_for_mask_recommendation: !prev.notify_for_mask_recommendation }))} />
+        <ToggleItem title="Avoid outdoor warning" description="Alert when outdoor activity should be avoided" enabled={settings.notify_for_avoid_outdoor} onToggle={() => setSettings((prev) => ({ ...prev, notify_for_avoid_outdoor: !prev.notify_for_avoid_outdoor }))} />
       </View>
 
       <SectionContainer className="mt-3">

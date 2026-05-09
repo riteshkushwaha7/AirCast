@@ -72,22 +72,5 @@ def get_best_window(
 ) -> BestWindowResponse:
     location = _resolve_location(current_user, location_id, location_service)
     resolved_location_id = location.id if location else None
-    window = forecast_service.best_window()
+    window = forecast_service.best_window(city=location.city if location else None)
     return BestWindowResponse(location_id=resolved_location_id, **window)
-
-
-@router.post("/generate-demo", response_model=ForecastGenerateDemoResponse)
-def generate_demo_forecasts(
-    location_id: UUID | None = Query(default=None),
-    current_user: User = Depends(get_current_db_user),
-    location_service: LocationService = Depends(get_location_service),
-    forecast_service: ForecastService = Depends(get_forecast_service),
-) -> ForecastGenerateDemoResponse:
-    location = _resolve_location(current_user, location_id, location_service)
-    resolved_location_id = location.id if location else None
-    saved = forecast_service.generate_demo_logs(
-        user_id=current_user.id,
-        location_id=resolved_location_id,
-        city=location.city if location else None,
-    )
-    return ForecastGenerateDemoResponse(generated=True, location_id=resolved_location_id, saved_records=saved)

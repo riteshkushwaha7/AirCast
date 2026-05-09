@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     environment: Literal["development", "staging", "production"] = "development"
     debug: bool = True
     api_v1_prefix: str = "/api/v1"
+    cors_origins: str = "http://localhost:3000"
 
     postgres_uri: str = "postgresql+psycopg2://airwise:airwise123@localhost:5432/airwise"
     postgres_echo: bool = False
@@ -27,7 +28,8 @@ class Settings(BaseSettings):
     firebase_project_id: str | None = None
     firebase_client_email: str | None = None
     firebase_private_key: str | None = None
-    allow_mock_auth: bool = True
+    allow_mock_auth: bool = False
+    source_mock_mode: bool = False
 
     fcm_enabled: bool = False
     fcm_dry_run: bool = True
@@ -37,20 +39,19 @@ class Settings(BaseSettings):
 
     default_threshold_aqi: int = Field(default=150, ge=50, le=500)
 
-    source_mock_mode: bool = True
     cpcb_base_url: str = "https://api.example.cpcb.gov.in"
     cpcb_timeout_seconds: int = Field(default=20, ge=2, le=120)
     cpcb_default_limit: int = Field(default=500, ge=50, le=5000)
 
-    live_aqi_provider: Literal["cpcb", "openaq"] = "cpcb"
-    live_aqi_base_url: str = "https://api.data.gov.in/resource/placeholder-cpcb-aqi"
+    live_aqi_provider: Literal["cpcb", "waqi"] = "waqi"
+    live_aqi_base_url: str = "https://api.data.gov.in/resource/3b01bcb8-0b14-4abf-b6f2-c1bfd384ba69"
     live_aqi_api_key: str | None = None
-    live_aqi_timeout: int = Field(default=20, ge=2, le=120)
+    live_aqi_timeout: int = Field(default=30, ge=2, le=120)
     live_aqi_default_limit: int = Field(default=1000, ge=10, le=5000)
 
-    openaq_base_url: str = "https://api.openaq.org/v3"
-    openaq_timeout_seconds: int = Field(default=25, ge=2, le=120)
-    openaq_default_limit: int = Field(default=1000, ge=50, le=10000)
+    waqi_api_token: str | None = None
+    waqi_timeout_seconds: int = Field(default=20, ge=2, le=120)
+    waqi_default_cities: str = "gurugram,delhi,mumbai,bangalore,hyderabad,chennai,kolkata,pune,ahmedabad,jaipur"
 
     weather_base_url: str = "https://weather.example.com"
     weather_timeout_seconds: int = Field(default=10, ge=2, le=60)
@@ -71,6 +72,7 @@ class Settings(BaseSettings):
     train_target_column: str = "aqi"
     lookback_hours: int = Field(default=24, ge=6, le=240)
     forecast_horizons: str = "4,6,12,24"
+    lstm_model_path: str = "models/lstm_aqi.keras"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
@@ -85,6 +87,16 @@ class Settings(BaseSettings):
         if normalized in {"0", "false", "no", "off", "release", "prod", "production"}:
             return False
         return True
+
+    @field_validator("postgres_uri", mode="before")
+    @classmethod
+    def _normalize_postgres_uri(cls, value: str) -> str:
+        normalized = value.strip()
+        if normalized.startswith("postgresql://"):
+            return normalized.replace("postgresql://", "postgresql+psycopg2://", 1)
+        if normalized.startswith("postgres://"):
+            return normalized.replace("postgres://", "postgresql+psycopg2://", 1)
+        return normalized
 
 
 @lru_cache

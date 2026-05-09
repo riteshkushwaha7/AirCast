@@ -7,6 +7,7 @@ CATEGORY_ORDER: dict[AQICategory, int] = {
     AQICategory.UNHEALTHY: 3,
     AQICategory.VERY_UNHEALTHY: 4,
     AQICategory.HAZARDOUS: 5,
+    AQICategory.UNAVAILABLE: -1,
 }
 
 CATEGORY_LABELS: dict[AQICategory, str] = {
@@ -16,6 +17,7 @@ CATEGORY_LABELS: dict[AQICategory, str] = {
     AQICategory.UNHEALTHY: "Unhealthy",
     AQICategory.VERY_UNHEALTHY: "Very unhealthy",
     AQICategory.HAZARDOUS: "Hazardous",
+    AQICategory.UNAVAILABLE: "Unavailable",
 }
 
 BASE_RISK_BY_CATEGORY: dict[AQICategory, str] = {
@@ -25,6 +27,7 @@ BASE_RISK_BY_CATEGORY: dict[AQICategory, str] = {
     AQICategory.UNHEALTHY: "high",
     AQICategory.VERY_UNHEALTHY: "severe",
     AQICategory.HAZARDOUS: "severe",
+    AQICategory.UNAVAILABLE: "low",
 }
 
 

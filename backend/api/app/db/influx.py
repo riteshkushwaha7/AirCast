@@ -33,18 +33,43 @@ from app.core.config import get_settings
 
 
 class InfluxProvider:
+    _connected: bool | None = None
+
     def __init__(self) -> None:
         settings = get_settings()
-        self.client = InfluxDBClient(
-            url=settings.influx_url,
-            token=settings.influx_token,
-            org=settings.influx_org,
-        )
+        self.url = settings.influx_url
+        try:
+            self.client = InfluxDBClient(
+                url=self.url,
+                token=settings.influx_token,
+                org=settings.influx_org,
+                timeout=3000, # 3 seconds
+            )
+        except Exception:
+            self.client = None
+
+    def is_available(self) -> bool:
+        if self.client is None:
+            return False
+        if self._connected is not None:
+            return self._connected
+        try:
+            # ping() is not supported on InfluxDB Cloud (returns 405).
+            # Use a lightweight Flux query instead to verify connectivity.
+            self.client.query_api().query('buckets()')
+            self._connected = True
+        except Exception:
+            self._connected = False
+        return self._connected
 
     def write_api(self) -> WriteApi:
+        if not self.is_available():
+            return WriteApi() # Return the fallback stub
         return self.client.write_api(write_options=SYNCHRONOUS)
 
     def query_api(self) -> QueryApi:
+        if not self.is_available():
+            return QueryApi() # Return the fallback stub
         return self.client.query_api()
 
 

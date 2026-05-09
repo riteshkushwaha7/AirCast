@@ -3,13 +3,13 @@ from fastapi import APIRouter
 from app.api.routes import (
     admin,
     alerts,
-    assistant,
     aqi,
     auth,
     forecasts,
     locations,
     notifications,
     planner,
+    predictions,
     profiles,
     recommendations,
     users,
@@ -27,5 +27,5 @@ api_router.include_router(aqi.router)
 api_router.include_router(forecasts.router)
 api_router.include_router(planner.router)
 api_router.include_router(recommendations.router)
-api_router.include_router(assistant.router)
+api_router.include_router(predictions.router)
 api_router.include_router(admin.router)

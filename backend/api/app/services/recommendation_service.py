@@ -117,4 +117,5 @@ def _category_midpoint(category: AQICategory) -> float:
         AQICategory.UNHEALTHY: 175.0,
         AQICategory.VERY_UNHEALTHY: 250.0,
         AQICategory.HAZARDOUS: 350.0,
+        AQICategory.UNAVAILABLE: 0.0,
     }[category]

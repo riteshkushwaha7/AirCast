@@ -85,7 +85,7 @@ def run_backfill_ingestion(
     ingestion_service: IngestionService = Depends(get_ingestion_service),
 ) -> IngestionTriggerResponse:
     global LATEST_INGESTION_SUMMARY
-    summary = ingestion_service.backfill_from_openaq(
+    summary = ingestion_service.backfill_from_waqi(
         city=payload.city,
         days=payload.days,
         start_at=payload.start_at,

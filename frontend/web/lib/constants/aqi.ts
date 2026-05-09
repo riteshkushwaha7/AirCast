@@ -4,7 +4,7 @@ export const aqiCategoryMeta: Record<
   AQICategory,
   {
     label: string;
-    tone: "good" | "moderate" | "sensitive" | "unhealthy" | "hazardous";
+    tone: "good" | "moderate" | "sensitive" | "unhealthy" | "hazardous" | "unavailable";
     hint: string;
   }
 > = {
@@ -38,6 +38,11 @@ export const aqiCategoryMeta: Record<
     tone: "hazardous",
     hint: "Stay indoors and avoid outdoor exposure.",
   },
+  unavailable: {
+    label: "Unavailable",
+    tone: "unavailable",
+    hint: "Live air quality data is currently unavailable.",
+  },
 };
 
 export const aqiToneClass: Record<string, string> = {
@@ -46,5 +51,6 @@ export const aqiToneClass: Record<string, string> = {
   sensitive: "border-sensitive/25 bg-sensitive/10 text-sensitive",
   unhealthy: "border-unhealthy/25 bg-unhealthy/10 text-unhealthy",
   hazardous: "border-hazardous/25 bg-hazardous/10 text-hazardous",
+  unavailable: "border-gray-300 bg-gray-100 text-gray-500",
 };
 

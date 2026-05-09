@@ -32,7 +32,16 @@ def get_current_aqi(
 ) -> AQICurrentResponse:
     location = location_service.get_location(current_user.id, location_id) if location_id else location_service.get_primary_location(current_user.id)
     if location:
-        reading = aqi_service.get_current_by_city(city=location.city, state=location.state, country=location.country)
+        # Use coordinates if available for more accurate WAQI lookup
+        if location.latitude is not None and location.longitude is not None:
+            reading = aqi_service.get_current_by_coordinates(latitude=location.latitude, longitude=location.longitude)
+            # Update reading with location info if it came from geo lookup
+            if reading.get("city") == "Unknown":
+                reading["city"] = location.city
+                reading["state"] = location.state
+                reading["country"] = location.country
+        else:
+            reading = aqi_service.get_current_by_city(city=location.city, state=location.state, country=location.country)
         return AQICurrentResponse(location_id=location.id, reading=AQIReading(**reading))
 
     fallback = aqi_service.get_current_fallback()

@@ -155,15 +155,39 @@ export interface AlertSettings {
   quiet_hours_end: string;
 }
 
-export interface AssistantExplanation {
-  explanation: string;
-  disclaimer: string;
+export interface UserProfile {
+  id: string;
+  user_id: string;
+  health_profile: HealthProfile;
+  sensitivity_level: SensitivityLevel;
+  preferred_activity_types: ActivityType[];
+  display_preferences: {
+    aqi_scale: string;
+  };
 }
 
 export interface WatchNotificationPayload {
   title: string;
   body: string;
   type: NotificationType;
+}
+
+export interface AQIHistoryPoint {
+  timestamp: string;
+  aqi: number;
+}
+
+export interface AQIHistoryResponse {
+  location_id: string | null;
+  range: string;
+  points: AQIHistoryPoint[];
+}
+
+export interface PredictionRunResponse {
+  location_id: string;
+  city: string;
+  generated_at: string;
+  horizons: ForecastPoint[];
 }
 
 export interface DashboardBundle {

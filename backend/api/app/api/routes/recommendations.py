@@ -107,13 +107,3 @@ def get_current_recommendation_compact(
         best_window=forecast_service.best_window(),
     )
     return RecommendationCompactResponse.model_validate(recommendation_service.compact(recommendation))
-
-
-@router.post("/explain-demo", response_model=RecommendationExplainDemoResponse)
-def explain_recommendation_demo(payload: RecommendationExplainDemoRequest) -> RecommendationExplainDemoResponse:
-    summary = RecommendationService().explain_demo(
-        recommendation_text=payload.recommendation_text,
-        category=payload.category,
-        risk_level=payload.risk_level,
-    )
-    return RecommendationExplainDemoResponse(summary=summary)

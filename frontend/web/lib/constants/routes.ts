@@ -10,6 +10,5 @@ export const routes = {
   locations: "/locations",
   profile: "/profile",
   aboutAqi: "/about-aqi",
-  assistant: "/assistant",
 } as const;
 

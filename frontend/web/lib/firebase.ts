@@ -10,13 +10,24 @@ const config = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-const firebaseApp = getApps().length ? getApp() : initializeApp(config);
+// Validate that all required config values are present
+Object.entries(config).forEach(([key, value]) => {
+  if (!value) {
+    throw new Error(`NEXT_PUBLIC_FIREBASE_${key.replace(/[A-Z]/g, letter => `_${letter}`).toUpperCase()} is required`);
+  }
+});
+
+const firebaseApp = getApps().length ? getApp() : initializeApp(config as any);
 
 export const firebaseAuth = getAuth(firebaseApp);
+
+export const firebaseVapidPublicKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY!;
+if (!firebaseVapidPublicKey) {
+  throw new Error("NEXT_PUBLIC_FIREBASE_VAPID_KEY is required");
+}
 
 export async function getFirebaseMessaging() {
   const supported = await isSupported();
   if (!supported) return null;
   return getMessaging(firebaseApp);
 }
-

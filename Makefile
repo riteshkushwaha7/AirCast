@@ -1,10 +1,7 @@
-.PHONY: dev down backend frontend mobile seed health test-backend test-pipeline
+.PHONY: dev backend frontend mobile seed health test-backend test-pipeline
 
 dev:
-	docker compose up --build
-
-down:
-	docker compose down
+	@echo "Please run 'make backend' and 'make frontend' in separate terminals."
 
 backend:
 	cd backend/api && uvicorn app.main:app --reload --port 8000

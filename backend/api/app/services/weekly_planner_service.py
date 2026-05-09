@@ -16,7 +16,6 @@ from app.schemas.planner import (
 )
 from app.services.best_window_service import BestWindowService
 from app.services.forecast_service import ForecastService
-from app.services.mock_data import SAMPLE_WEEKLY_PLANNER_SCENARIOS
 from app.services.planner_summary_service import PlannerSummaryService
 from app.utils.enums import ActivityType, HealthProfile, SensitivityLevel
 
@@ -39,9 +38,8 @@ class WeeklyPlannerService:
         health_profile: HealthProfile,
         sensitivity_level: SensitivityLevel,
         activities: list[ActivityType] | None = None,
-        scenario: str | None = None,
     ) -> WeeklyPlannerResponse:
-        base_series = self._get_base_series(location_id=getattr(location, "id", None), scenario=scenario)
+        base_series = self._get_base_series(location_id=getattr(location, "id", None))
         near_term_window = self.forecast_service.best_window()
 
         days: list[PlannerDayPlan] = []
@@ -109,7 +107,7 @@ class WeeklyPlannerService:
 
         summary = self.summary_service.summarize_week(days)
         return WeeklyPlannerResponse(
-            location=self._location_summary(location, scenario=scenario),
+            location=self._location_summary(location),
             generated_at=datetime.now(tz=UTC),
             week_summary=summary,
             days=days,
@@ -179,22 +177,6 @@ class WeeklyPlannerService:
             days=activity_days,
         )
 
-    def generate_demo(
-        self,
-        *,
-        scenario: str,
-        health_profile: HealthProfile = HealthProfile.GENERAL,
-        sensitivity_level: SensitivityLevel = SensitivityLevel.NORMAL,
-        activities: list[ActivityType] | None = None,
-    ) -> WeeklyPlannerResponse:
-        return self.get_weekly_plan(
-            location=None,
-            health_profile=health_profile,
-            sensitivity_level=sensitivity_level,
-            activities=activities,
-            scenario=scenario,
-        )
-
     @staticmethod
     def coerce_activity_types(values: Iterable[str | ActivityType] | None) -> list[ActivityType]:
         if values is None:
@@ -210,21 +192,13 @@ class WeeklyPlannerService:
                 continue
         return output
 
-    def _get_base_series(self, *, location_id, scenario: str | None) -> list[float]:
-        if scenario and scenario in SAMPLE_WEEKLY_PLANNER_SCENARIOS:
-            return list(SAMPLE_WEEKLY_PLANNER_SCENARIOS[scenario])
-
+    def _get_base_series(self, *, location_id) -> list[float]:
         weekly = self.forecast_service.generate_weekly_summary(location_id=location_id)
         values = [float(item["avg_aqi"]) for item in weekly if item.get("avg_aqi") is not None]
-        if len(values) >= 7:
-            return values[:7]
-
-        fallback = list(SAMPLE_WEEKLY_PLANNER_SCENARIOS["mixed"])
-        merged = values + fallback[len(values) :]
-        return merged[:7]
+        return values[:7]
 
     @staticmethod
-    def _location_summary(location, *, scenario: str | None) -> PlannerLocationSummary:
+    def _location_summary(location) -> PlannerLocationSummary:
         if location is not None:
             return PlannerLocationSummary(
                 location_id=location.id,
@@ -235,15 +209,10 @@ class WeeklyPlannerService:
                 lat=location.latitude,
                 lon=location.longitude,
             )
-        fallback_city = {
-            "good": "Bengaluru",
-            "mixed": "Delhi",
-            "poor": "Noida",
-        }.get(scenario or "mixed", "Delhi")
         return PlannerLocationSummary(
             location_id=None,
-            name=fallback_city,
-            city=fallback_city,
+            name="Unknown",
+            city="Unknown",
             state=None,
             country="India",
             lat=None,

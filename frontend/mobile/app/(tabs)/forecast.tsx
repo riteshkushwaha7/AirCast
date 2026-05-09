@@ -1,16 +1,18 @@
 import { useEffect, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 
-import { AQICard, ForecastCard, RecommendationCard } from "../../components/cards";
+import { AQIBadge, ForecastCard } from "../../components/cards";
 import { MiniTrendChart } from "../../components/charts";
 import { AppHeader } from "../../components/layout";
 import { EmptyState, ErrorState, LoadingState, SectionContainer } from "../../components/ui";
-import { getDashboardBundle, getForecast } from "../../services/api";
-import type { DashboardBundle, ForecastPoint } from "../../types/airwise";
+import { getAqiHistory, getForecast, getLocations } from "../../services/api";
+import type { AQIHistoryPoint, ForecastPoint, Location } from "../../types/airwise";
+import { AQI_CATEGORY_META } from "../../constants/app";
 
 export default function ForecastScreen() {
-  const [dashboard, setDashboard] = useState<DashboardBundle | null>(null);
+  const [location, setLocation] = useState<Location | null>(null);
   const [forecast, setForecast] = useState<ForecastPoint[]>([]);
+  const [historyValues, setHistoryValues] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -19,26 +21,30 @@ export default function ForecastScreen() {
 
     const load = async () => {
       try {
-        const [dashboardBundle, forecastPoints] = await Promise.all([getDashboardBundle(), getForecast()]);
+        const locations = await getLocations();
+        const loc = locations.find((l) => l.is_primary) ?? locations[0];
+        if (!loc) throw new Error("No location found");
+
+        const [forecastPoints, history] = await Promise.all([
+          getForecast(loc.id),
+          getAqiHistory(loc.id, "24h")
+        ]);
+
         if (active) {
-          setDashboard(dashboardBundle);
+          setLocation(loc);
           setForecast(forecastPoints);
+          setHistoryValues(history.points.map((p: AQIHistoryPoint) => p.aqi));
           setError(null);
         }
       } catch (err) {
-        if (active) {
-          setError(err instanceof Error ? err.message : "Unable to load forecast");
-        }
+        if (active) setError(err instanceof Error ? err.message : "Unable to load forecast");
       } finally {
         if (active) setLoading(false);
       }
     };
 
     void load();
-
-    return () => {
-      active = false;
-    };
+    return () => { active = false; };
   }, []);
 
   if (loading) {
@@ -57,7 +63,7 @@ export default function ForecastScreen() {
     );
   }
 
-  if (!dashboard || forecast.length === 0) {
+  if (forecast.length === 0) {
     return (
       <ScrollView className="flex-1 bg-surface" contentContainerClassName="px-5 pb-10 pt-12">
         <EmptyState title="No forecast data" message="Forecast updates will appear shortly." />
@@ -67,12 +73,19 @@ export default function ForecastScreen() {
 
   return (
     <ScrollView className="flex-1 bg-surface" contentContainerClassName="px-5 pb-10 pt-12">
-      <AppHeader title="Forecast" subtitle="4h to 24h AQI outlook" />
+      <AppHeader
+        title="Forecast"
+        subtitle={location ? `${location.city}, ${location.state ?? location.country}` : "AQI outlook"}
+      />
 
-      <AQICard reading={dashboard.current} />
+      {historyValues.length > 0 ? (
+        <View className="mb-3">
+          <MiniTrendChart values={historyValues} />
+        </View>
+      ) : null}
 
-      <SectionContainer className="mt-3">
-        <Text className="mb-2 text-sm font-semibold text-ink">Time windows</Text>
+      <SectionContainer>
+        <Text className="mb-3 text-sm font-semibold text-ink">Hourly windows</Text>
         <View className="flex-row flex-wrap gap-2">
           {forecast.map((point) => (
             <ForecastCard key={point.horizon_hours} point={point} />
@@ -80,13 +93,24 @@ export default function ForecastScreen() {
         </View>
       </SectionContainer>
 
-      <View className="mt-3">
-        <MiniTrendChart values={dashboard.trendPoints} />
-      </View>
-
-      <View className="mt-3">
-        <RecommendationCard text={dashboard.recommendation.recommendation_text} riskLevel={dashboard.recommendation.risk_level} />
-      </View>
+      <SectionContainer className="mt-3">
+        <Text className="mb-3 text-sm font-semibold text-ink">Daily outlook</Text>
+        {forecast.map((point) => {
+          const meta = AQI_CATEGORY_META[point.category];
+          return (
+            <View key={point.horizon_hours} className="mb-2 flex-row items-center justify-between rounded-xl border border-line bg-surface-muted px-3 py-3">
+              <View className="flex-1 mr-3">
+                <Text className="text-sm font-medium text-ink">+{point.horizon_hours}h</Text>
+                <Text className="mt-0.5 text-xs text-ink-soft">{meta?.hint ?? ""}</Text>
+              </View>
+              <View className="items-end gap-1">
+                <Text className="text-base font-semibold text-ink">{Math.round(point.predicted_aqi)}</Text>
+                <AQIBadge category={point.category} />
+              </View>
+            </View>
+          );
+        })}
+      </SectionContainer>
     </ScrollView>
   );
 }

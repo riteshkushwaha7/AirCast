@@ -6,6 +6,7 @@ const labelMap: Record<string, string> = {
   forecast: "Forecast",
   planner: "Planner",
   alerts: "Alerts",
+  locations: "Locations",
   profile: "Profile"
 };
 

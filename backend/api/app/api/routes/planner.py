@@ -95,20 +95,3 @@ def get_activity_outlook(
         sensitivity_level=profile.sensitivity_level,
         activity_type=activity_type,
     )
-
-
-@router.post("/generate-demo", response_model=PlannerGenerateDemoResponse)
-def generate_demo_week(
-    payload: PlannerGenerateDemoRequest,
-    current_user: User = Depends(get_current_db_user),
-    profile_service: ProfileService = Depends(get_profile_service),
-    weekly_planner_service: WeeklyPlannerService = Depends(get_weekly_planner_service),
-) -> PlannerGenerateDemoResponse:
-    profile = profile_service.get_or_create(current_user.id)
-    plan = weekly_planner_service.generate_demo(
-        scenario=payload.scenario,
-        health_profile=profile.health_profile,
-        sensitivity_level=profile.sensitivity_level,
-        activities=weekly_planner_service.coerce_activity_types(profile.preferred_activity_types),
-    )
-    return PlannerGenerateDemoResponse(scenario=payload.scenario, planner=plan)

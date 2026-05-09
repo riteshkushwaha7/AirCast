@@ -7,4 +7,5 @@ CATEGORY_LABELS = {
     AQICategory.UNHEALTHY: "Unhealthy",
     AQICategory.VERY_UNHEALTHY: "Very unhealthy",
     AQICategory.HAZARDOUS: "Hazardous",
+    AQICategory.UNAVAILABLE: "Unavailable",
 }

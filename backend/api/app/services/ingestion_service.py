@@ -3,7 +3,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any, Iterable
 
 from app.integrations.cpcb_client import CPCBClient
-from app.integrations.openaq_client import OpenAQClient
+from app.integrations.waqi_client import WAQIClient
 from app.repositories.aqi_timeseries_repository import AQITimeSeriesRepository
 from app.schemas.ingestion import IngestionSummary, NormalizedAQIRecord
 from app.utils.validators import validate_pollutant_value
@@ -16,18 +16,18 @@ class IngestionService:
         self,
         timeseries_repository: AQITimeSeriesRepository,
         cpcb_client: CPCBClient | None = None,
-        openaq_client: OpenAQClient | None = None,
+        waqi_client: WAQIClient | None = None,
     ) -> None:
         self.timeseries_repository = timeseries_repository
         self.cpcb_client = cpcb_client or CPCBClient()
-        self.openaq_client = openaq_client or OpenAQClient()
+        self.waqi_client = waqi_client or WAQIClient()
         self._latest_summary: IngestionSummary | None = None
 
     def ingest_current_from_cpcb(self, city: str | None = None, limit: int | None = None) -> IngestionSummary:
         fetched = self.cpcb_client.fetch_current_records(city=city, limit=limit)
         return self.ingest_records(records=fetched, source="cpcb", mode="current")
 
-    def backfill_from_openaq(
+    def backfill_from_waqi(
         self,
         city: str,
         days: int = 30,
@@ -35,10 +35,14 @@ class IngestionService:
         end_at: datetime | None = None,
         limit: int | None = None,
     ) -> IngestionSummary:
+        """Backfill historical data from WAQI (limited historical data available)."""
         end_dt = _utc(end_at) if end_at else datetime.now(tz=UTC)
         start_dt = _utc(start_at) if start_at else end_dt - timedelta(days=days)
-        fetched = self.openaq_client.fetch_historical_records(city=city, start_at=start_dt, end_at=end_dt, limit=limit)
-        return self.ingest_records(records=fetched, source="openaq", mode="historical_backfill")
+        # WAQI free API doesn't provide deep historical data
+        # Fetch current data as the best available snapshot
+        record = self.waqi_client.fetch_city_current_aqi(city=city)
+        fetched = [record] if record else []
+        return self.ingest_records(records=fetched, source="waqi", mode="historical_backfill")
 
     def ingest_records(self, records: Iterable[NormalizedAQIRecord | dict[str, Any]], source: str, mode: str) -> IngestionSummary:
         started_at = datetime.now(tz=UTC)

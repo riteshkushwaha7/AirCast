@@ -15,6 +15,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="forecast" options={{ title: "Forecast" }} />
       <Tabs.Screen name="planner" options={{ title: "Planner" }} />
       <Tabs.Screen name="alerts" options={{ title: "Alerts" }} />
+      <Tabs.Screen name="locations" options={{ title: "Locations" }} />
       <Tabs.Screen name="profile" options={{ title: "Profile" }} />
     </Tabs>
   );

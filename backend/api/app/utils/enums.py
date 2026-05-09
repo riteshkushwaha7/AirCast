@@ -37,6 +37,7 @@ class AQICategory(StrEnum):
     UNHEALTHY = "unhealthy"
     VERY_UNHEALTHY = "very_unhealthy"
     HAZARDOUS = "hazardous"
+    UNAVAILABLE = "unavailable"
 
 
 class NotificationType(StrEnum):
