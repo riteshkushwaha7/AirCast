@@ -34,7 +34,7 @@ Production-style backend foundation for AQI forecasting, recommendations, alerts
 ## Local Setup
 
 ```bash
-cd backend/api
+cd backend
 cp .env.example .env
 python -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
@@ -46,32 +46,6 @@ Docs:
 
 - Swagger UI: `http://localhost:8000/docs`
 - Health: `http://localhost:8000/api/v1/admin/health`
-
-## Docker
-
-Build and run directly:
-
-```bash
-cd backend/api
-docker build -t airwise-api .
-docker run --env-file .env -p 8000:8000 airwise-api
-```
-
-Or use root compose:
-
-```bash
-docker compose up --build api
-```
-
-## Demo Seed
-
-From repo root:
-
-```bash
-python scripts/seed_demo_data.py
-```
-
-This creates a demo user/profile/locations setup if absent.
 
 ## Test
 

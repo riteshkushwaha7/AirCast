@@ -102,9 +102,6 @@ export default function ProfilePage() {
           <Link href={routes.aboutAqi} className="text-sm text-ink-soft underline underline-offset-4">
             About AQI
           </Link>
-          <Link href={routes.assistant} className="text-sm text-ink-soft underline underline-offset-4">
-            Assistant
-          </Link>
         </div>
       </SectionCard>
 

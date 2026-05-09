@@ -19,22 +19,16 @@ It helps users understand current and upcoming air quality in simple terms, with
 - Backend: FastAPI, SQLAlchemy, Pydantic
 - Data: PostgreSQL (relational), InfluxDB (time-series)
 - Notifications: Firebase Cloud Messaging wrapper (mock/dry-run ready)
-- ML pipeline: Python scripts for ingestion, preprocessing, feature generation, planner projection hooks
-- Infra: Docker, Docker Compose
+- Data utilities live inside the backend service (ingestion, preprocessing, forecasting helpers)
+- Render deployment (no Docker required)
 
 ## Repository Structure
 
 ```text
 backend/
-  api/
 frontend/
-  web/
-  mobile/
-ml-pipeline/
+shared/
 docs/
-seed/
-scripts/
-docker-compose.yml
 ```
 
 ## Environment Setup
@@ -48,42 +42,14 @@ cp .env.example .env
 ```bash
 cp frontend/web/.env.local.example frontend/web/.env.local
 cp frontend/mobile/.env.example frontend/mobile/.env
-cp backend/api/.env.example backend/api/.env
-```
-
-## Run with Docker (Recommended Demo Path)
-
-```bash
-docker compose up --build
-```
-
-Services:
-
-- Web: `http://localhost:3000`
-- API: `http://localhost:8000`
-- API docs: `http://localhost:8000/docs`
-- InfluxDB: `http://localhost:8086`
-- PostgreSQL: `localhost:5432`
-
-Health check helper:
-
-```bash
-python scripts/check_system_health.py
-```
-
-Optional shortcuts:
-
-```bash
-make dev
-make seed
-make health
+cp backend/.env.example backend/.env
 ```
 
 ## Local Run (Without Docker)
 
 Backend:
 ```bash
-cd backend/api
+cd backend
 python -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
@@ -104,36 +70,6 @@ npm install
 npm run start
 ```
 
-ML pipeline:
-```bash
-cd ml-pipeline
-pip install -r requirements.txt
-python ingestion/run_ingestion.py --city Delhi --limit 100
-python preprocessing/clean_timeseries.py --city Delhi --lookback-hours 336
-python forecasting/weekly_forecast.py --days 7
-```
-
-## Demo / Mock Mode
-
-Use these values for stable demo behavior:
-
-- `ALLOW_MOCK_AUTH=true`
-- `SOURCE_MOCK_MODE=true`
-- `NEXT_PUBLIC_ENABLE_MOCK_FALLBACK=true`
-- `EXPO_PUBLIC_ENABLE_MOCK_FALLBACK=true`
-
-Seed demo data:
-```bash
-python scripts/seed_demo_data.py
-```
-
-Demo startup shortcut:
-```bash
-bash scripts/run_demo_mode.sh
-# or PowerShell:
-powershell -ExecutionPolicy Bypass -File scripts/run_demo_mode.ps1
-```
-
 ## Sample Demo Flow
 
 1. Open landing page (`/`)
@@ -143,9 +79,6 @@ powershell -ExecutionPolicy Bypass -File scripts/run_demo_mode.ps1
 5. Show recommendation + alert preferences
 6. Open weekly planner and highlight best/caution days
 7. Mention backend route coverage and data stores
-8. Mention ML ingestion/preprocessing + planner projection hooks
-
-Detailed presenter script: [docs/demo-script.md](docs/demo-script.md)
 
 ## Screenshots
 

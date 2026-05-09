@@ -1,6 +1,5 @@
 export * from "@/components/cards/aqi-badge";
 export * from "@/components/cards/aqi-hero-card";
-export * from "@/components/cards/assistant-prompt-card";
 export * from "@/components/cards/best-window-card";
 export * from "@/components/cards/best-day-card";
 export * from "@/components/cards/forecast-chip";
