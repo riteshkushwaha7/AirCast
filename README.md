@@ -5,7 +5,7 @@ It helps users understand current and upcoming air quality in simple terms, with
 
 ## Key Features
 
-- Current AQI + 4h/6h/12h/24h forecast summaries
+- Current AQI + 1d/2d/3d/7d forecast summaries
 - Personalized recommendation logic (health profile, sensitivity, activity)
 - Alert preference system + notification delivery stubs
 - 7-day planner with daily summaries, best-day highlights, and activity suitability

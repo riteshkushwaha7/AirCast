@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { SectionCard } from "@/components/cards/section-card";
@@ -7,7 +7,7 @@ import { routes } from "@/lib/constants/routes";
 const highlights = [
   {
     title: "Forecast ahead",
-    description: "See 4h to 24h AQI guidance before stepping out.",
+    description: "See day-by-day AQI guidance (1d, 2d, 3d, 7d) before stepping out.",
   },
   {
     title: "Health-aware advice",
@@ -64,7 +64,7 @@ export default function LandingPage() {
       <section className="mt-6">
         <SectionCard className="p-5">
           <p className="text-xs uppercase tracking-[0.14em] text-ink-soft">Product preview</p>
-          <p className="mt-2 text-sm text-ink">Current AQI: 168 Â· Forecast in 6h: 182 Â· Best window: 7:00 AM - 8:30 AM</p>
+          <p className="mt-2 text-sm text-ink">Current AQI: 168 · Day+1 forecast: 182 · Best window: 7:00 AM - 8:30 AM</p>
         </SectionCard>
       </section>
 

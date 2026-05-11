@@ -10,13 +10,13 @@ export function PageHeader({
   right?: ReactNode;
 }) {
   return (
-    <div className="mb-4 flex items-start justify-between gap-3">
+    <div className="mb-6 flex flex-col gap-3 rounded-3xl border border-white/40 bg-card-aurora p-5 shadow-soft backdrop-blur-xl md:flex-row md:items-center md:justify-between">
       <div>
-        <h1 className="text-2xl font-semibold text-ink">{title}</h1>
+        <p className="text-xs uppercase tracking-[0.35em] text-ink-soft">Airwise Snapshot</p>
+        <h1 className="font-serif text-3xl text-ink md:text-4xl">{title}</h1>
         {subtitle ? <p className="mt-1 text-sm text-ink-soft">{subtitle}</p> : null}
       </div>
       {right}
     </div>
   );
 }
-

@@ -46,11 +46,11 @@ export const aqiCategoryMeta: Record<
 };
 
 export const aqiToneClass: Record<string, string> = {
-  good: "border-good/25 bg-good/10 text-good",
-  moderate: "border-moderate/25 bg-moderate/10 text-moderate",
-  sensitive: "border-sensitive/25 bg-sensitive/10 text-sensitive",
-  unhealthy: "border-unhealthy/25 bg-unhealthy/10 text-unhealthy",
-  hazardous: "border-hazardous/25 bg-hazardous/10 text-hazardous",
-  unavailable: "border-gray-300 bg-gray-100 text-gray-500",
+  good: "border-good/40 bg-white/70 text-good",
+  moderate: "border-moderate/40 bg-white/70 text-moderate",
+  sensitive: "border-sensitive/40 bg-white/70 text-sensitive",
+  unhealthy: "border-unhealthy/40 bg-white/70 text-unhealthy",
+  hazardous: "border-hazardous/40 bg-white/70 text-hazardous",
+  unavailable: "border-white/40 bg-white/60 text-ink-soft",
 };
 

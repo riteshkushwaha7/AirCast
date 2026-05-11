@@ -48,10 +48,10 @@ export const AQI_CATEGORY_META: Record<AQICategory, { label: string; tone: strin
 };
 
 export const AQI_TONE_CLASSES: Record<string, string> = {
-  good: "border-good/30 bg-good/10 text-good",
-  moderate: "border-moderate/30 bg-moderate/10 text-moderate",
-  sensitive: "border-sensitive/30 bg-sensitive/10 text-sensitive",
-  unhealthy: "border-unhealthy/30 bg-unhealthy/10 text-unhealthy",
-  hazardous: "border-hazardous/30 bg-hazardous/10 text-hazardous"
+  good: "border-good/40 bg-white/70 text-good",
+  moderate: "border-moderate/40 bg-white/70 text-moderate",
+  sensitive: "border-sensitive/40 bg-white/70 text-sensitive",
+  unhealthy: "border-unhealthy/40 bg-white/70 text-unhealthy",
+  hazardous: "border-hazardous/40 bg-white/70 text-hazardous"
 };
 

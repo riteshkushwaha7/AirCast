@@ -1,19 +1,20 @@
-﻿import type { Metadata } from "next";
-import { Manrope, Newsreader } from "next/font/google";
+import type { Metadata } from "next";
+import { Playfair_Display, Space_Grotesk } from "next/font/google";
 
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 
-const sans = Manrope({
+const sans = Space_Grotesk({
   subsets: ["latin"],
   variable: "--font-sans",
   display: "swap",
 });
 
-const serif = Newsreader({
+const serif = Playfair_Display({
   subsets: ["latin"],
   variable: "--font-serif",
   display: "swap",
+  weight: ["500", "600"],
 });
 
 export const metadata: Metadata = {

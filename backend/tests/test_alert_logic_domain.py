@@ -24,8 +24,8 @@ def test_alert_logic_triggers_threshold_and_mask() -> None:
         current_aqi=128,
         current_category=AQICategory.UNHEALTHY_FOR_SENSITIVE_GROUPS,
         forecast_horizons=[
-            {"horizon_hours": 4, "predicted_aqi": 168},
-            {"horizon_hours": 12, "predicted_aqi": 182},
+            {"horizon_hours": 24, "predicted_aqi": 168},
+            {"horizon_hours": 72, "predicted_aqi": 182},
         ],
         recommendation={"mask_advised": True, "avoid_outdoor": False},
         preferences=Prefs(),

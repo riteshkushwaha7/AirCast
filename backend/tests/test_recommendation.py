@@ -10,7 +10,7 @@ def test_recommendation_escalates_for_sensitive_profile() -> None:
         health_profile=HealthProfile.ASTHMA,
         sensitivity_level=SensitivityLevel.HIGHLY_SENSITIVE,
         activity_type=ActivityType.RUNNING,
-        forecast_horizons=[{"horizon_hours": 4, "predicted_aqi": 160, "category": AQICategory.UNHEALTHY}],
+        forecast_horizons=[{"horizon_hours": 24, "predicted_aqi": 160, "category": AQICategory.UNHEALTHY}],
         best_window={"start_time": "07:00", "end_time": "08:30", "expected_aqi": 98},
     )
 
@@ -27,7 +27,7 @@ def test_recommendation_general_user_moderate_condition() -> None:
         health_profile=HealthProfile.GENERAL,
         sensitivity_level=SensitivityLevel.NORMAL,
         activity_type=ActivityType.WALKING,
-        forecast_horizons=[{"horizon_hours": 4, "predicted_aqi": 90, "category": AQICategory.MODERATE}],
+        forecast_horizons=[{"horizon_hours": 24, "predicted_aqi": 90, "category": AQICategory.MODERATE}],
         best_window=None,
     )
     assert result["risk_level"] in {"low", "moderate", "elevated"}

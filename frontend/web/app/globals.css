@@ -3,17 +3,18 @@
 @tailwind utilities;
 
 :root {
-  --surface: #f6f7f5;
-  --surface-muted: #edf1eb;
-  --line: #dde3da;
-  --ink: #1e252b;
-  --ink-soft: #626d78;
-  --brand: #24323e;
-  --good: #3f7a4f;
-  --moderate: #8b7a30;
-  --sensitive: #96672d;
-  --unhealthy: #9f4b37;
-  --hazardous: #7f3f59;
+  --surface: #eaf0ff;
+  --surface-muted: #dfe6ff;
+  --line: rgba(10, 37, 64, 0.12);
+  --ink: #091a39;
+  --ink-soft: #5c6f92;
+  --brand: #2f63ff;
+  --brand-accent: #86c8ff;
+  --good: #17c6a3;
+  --moderate: #f4c14d;
+  --sensitive: #f29c59;
+  --unhealthy: #f26b6d;
+  --hazardous: #be4a94;
 }
 
 * {
@@ -29,8 +30,19 @@ body {
 }
 
 body {
-  font-family: var(--font-sans), ui-sans-serif, system-ui;
-  line-height: 1.5;
+  font-family: var(--font-sans), "Space Grotesk", ui-sans-serif;
+  line-height: 1.55;
+  background-color: #dfe6ff;
+  background-image:
+    radial-gradient(circle at 12% 20%, rgba(255, 255, 255, 0.92), transparent 45%),
+    radial-gradient(circle at 85% 10%, rgba(115, 149, 255, 0.35), transparent 55%),
+    linear-gradient(135deg, #f6f8ff 0%, #e2e9ff 48%, #fdf2ff 100%);
+  color: var(--ink);
+}
+
+::selection {
+  background: rgba(47, 99, 255, 0.25);
+  color: var(--ink);
 }
 
 a {

@@ -17,13 +17,13 @@ export function MobileNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed inset-x-3 bottom-3 z-40 flex rounded-2xl border border-line bg-white p-2 shadow-soft md:hidden">
+    <nav className="fixed inset-x-3 bottom-3 z-40 flex rounded-3xl border border-white/40 bg-card-aurora p-2 shadow-soft backdrop-blur-xl md:hidden">
       {navItems.map((item) => (
         <Link
           key={item.href}
           href={item.href}
-          className={`flex-1 rounded-lg px-2 py-2 text-center text-xs font-medium ${
-            pathname === item.href ? "bg-surface-muted text-ink" : "text-ink-soft"
+          className={`flex-1 rounded-2xl px-2 py-2 text-center text-[11px] font-semibold ${
+            pathname === item.href ? "bg-pill-glow text-ink" : "text-ink-soft"
           }`}
         >
           {item.label}
@@ -32,4 +32,3 @@ export function MobileNav() {
     </nav>
   );
 }
-

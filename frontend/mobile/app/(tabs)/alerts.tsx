@@ -22,10 +22,10 @@ export default function AlertsScreen() {
 
       <View className="gap-2">
         <ToggleItem title="Master alerts" description="Enable all alerts" enabled={settings.enabled} onToggle={() => setSettings((prev) => ({ ...prev, enabled: !prev.enabled }))} />
-        <ToggleItem title="4h forecast alert" description="Near-term AQI warning" enabled={settings.alert_4h} onToggle={() => setSettings((prev) => ({ ...prev, alert_4h: !prev.alert_4h }))} />
-        <ToggleItem title="6h forecast alert" description="Early AQI increase alert" enabled={settings.alert_6h} onToggle={() => setSettings((prev) => ({ ...prev, alert_6h: !prev.alert_6h }))} />
-        <ToggleItem title="12h forecast alert" description="Half-day planning alert" enabled={settings.alert_12h} onToggle={() => setSettings((prev) => ({ ...prev, alert_12h: !prev.alert_12h }))} />
-        <ToggleItem title="24h forecast alert" description="Next-day caution alert" enabled={settings.alert_24h} onToggle={() => setSettings((prev) => ({ ...prev, alert_24h: !prev.alert_24h }))} />
+        <ToggleItem title="Day 1 alert (24h)" description="Next-day AQI warning" enabled={settings.alert_4h} onToggle={() => setSettings((prev) => ({ ...prev, alert_4h: !prev.alert_4h }))} />
+        <ToggleItem title="Day 2 alert (48h)" description="Early warning for the day after" enabled={settings.alert_6h} onToggle={() => setSettings((prev) => ({ ...prev, alert_6h: !prev.alert_6h }))} />
+        <ToggleItem title="Day 3 alert (72h)" description="Plan ahead for weekend conditions" enabled={settings.alert_12h} onToggle={() => setSettings((prev) => ({ ...prev, alert_12h: !prev.alert_12h }))} />
+        <ToggleItem title="Day 7 alert (168h)" description="Week-ahead caution alert" enabled={settings.alert_24h} onToggle={() => setSettings((prev) => ({ ...prev, alert_24h: !prev.alert_24h }))} />
         <ToggleItem title="Daily summary" description="Morning AQI summary" enabled={settings.daily_summary_enabled} onToggle={() => setSettings((prev) => ({ ...prev, daily_summary_enabled: !prev.daily_summary_enabled }))} />
         <ToggleItem title="Best time alert" description="Notify when best outdoor window arrives" enabled={settings.best_time_alert_enabled} onToggle={() => setSettings((prev) => ({ ...prev, best_time_alert_enabled: !prev.best_time_alert_enabled }))} />
         <ToggleItem title="Mask recommendation" description="Alert when mask is advised" enabled={settings.notify_for_mask_recommendation} onToggle={() => setSettings((prev) => ({ ...prev, notify_for_mask_recommendation: !prev.notify_for_mask_recommendation }))} />

@@ -1,6 +1,5 @@
 import json
 import logging
-import os
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -11,15 +10,16 @@ from app.utils.validators import aqi_to_category
 
 logger = logging.getLogger(__name__)
 
-_FORECAST_HORIZONS = [4, 6, 12, 24]
-
-# Directory where per-city models are stored (relative to backend/)
 _MODELS_DIR = Path(__file__).resolve().parents[2] / "models"
+_UNIFIED_MODEL_PATH = _MODELS_DIR / "airwise_lstm.keras"
+_UNIFIED_SCALER_PATH = _MODELS_DIR / "airwise_scaler.pkl"
+_UNIFIED_METADATA_PATH = _MODELS_DIR / "airwise_metadata.json"
 
+# Forecast horizons in days; exposed as hours in the API response
+_FORECAST_DAYS = [1, 2, 3, 7]
+_FORECAST_HOURS = [d * 24 for d in _FORECAST_DAYS]  # [24, 48, 72, 168]
 
-def _city_key(name: str) -> str:
-    """Normalize a city name to match saved model filenames."""
-    return "_".join(name.lower().strip().split())
+LOOKBACK_DAYS = 30
 
 
 class ModelNotTrainedError(RuntimeError):
@@ -27,11 +27,14 @@ class ModelNotTrainedError(RuntimeError):
 
 
 class PredictionService:
-    """Loads per-city LSTM models and runs inference.  Falls back to
-    trend-based heuristic when no model exists for the requested city."""
+    """Runs AQI predictions using the unified airwise LSTM model (dual inputs:
+    aqi_sequence + city_id).  Falls back to a trend heuristic when the model
+    file is absent."""
 
-    _model_cache: dict[str, Any] = {}
-    _meta_cache: dict[str, dict[str, Any]] = {}
+    _model: Any = None
+    _scaler: Any = None
+    _metadata: dict[str, Any] | None = None
+    _model_loaded: bool = False
 
     def __init__(self, timeseries_repository: AQITimeSeriesRepository) -> None:
         self.timeseries_repository = timeseries_repository
@@ -43,18 +46,16 @@ class PredictionService:
 
     def run(self, city: str, location_id: str) -> dict[str, Any]:
         """Fetch history, run inference (LSTM or trend fallback), store results, return dict."""
-        lookback = self.settings.lookback_hours
-        history = self._fetch_history(city, lookback)
+        history = self._fetch_history(city, lookback_hours=LOOKBACK_DAYS * 24)
+        aqi_series = self._to_daily_series(history, LOOKBACK_DAYS)
 
-        aqi_series = [float(row["aqi"]) for row in history] if history else []
+        model, scaler, metadata = self._try_load_unified_model()
+        city_encoder: dict[str, int] = (metadata or {}).get("city_encoder", {})
 
-        city_key = _city_key(city)
-        model, meta = self._try_load_city_model(city_key)
-
-        if model is not None and meta is not None:
-            predicted_values = self._run_lstm(model, meta, aqi_series, lookback)
+        if model is not None and scaler is not None and metadata is not None and city in city_encoder:
+            predicted_values = self._run_lstm(model, scaler, city_encoder[city], aqi_series)
             source = "model"
-        elif aqi_series and len(aqi_series) >= 2:
+        elif len(aqi_series) >= 2:
             predicted_values = self._run_trend_fallback(aqi_series)
             source = "trend"
         else:
@@ -64,14 +65,14 @@ class PredictionService:
         now = datetime.now(tz=UTC)
         horizons_out: list[dict[str, Any]] = []
 
-        for i, h in enumerate(_FORECAST_HORIZONS):
+        for i, (days, hours) in enumerate(zip(_FORECAST_DAYS, _FORECAST_HOURS)):
             pred_aqi = predicted_values[i] if i < len(predicted_values) else predicted_values[-1]
             pred_aqi = max(0.0, min(500.0, pred_aqi))
             category = aqi_to_category(pred_aqi).value
-            target_ts = now + timedelta(hours=h)
+            target_ts = now + timedelta(hours=hours)
             horizons_out.append(
                 {
-                    "horizon_hours": h,
+                    "horizon_hours": hours,
                     "predicted_aqi": round(pred_aqi, 1),
                     "category": category,
                     "target_timestamp": target_ts.isoformat(),
@@ -91,35 +92,34 @@ class PredictionService:
     # LSTM inference
     # ------------------------------------------------------------------
 
-    def _run_lstm(self, model: Any, meta: dict[str, Any], aqi_series: list[float], lookback: int) -> list[float]:
+    def _run_lstm(
+        self,
+        model: Any,
+        scaler: Any,
+        city_id: int,
+        aqi_series: list[float],
+    ) -> list[float]:
         try:
             import numpy as np
         except ImportError as exc:
             raise RuntimeError("numpy is required for prediction inference") from exc
 
-        # Use normalization params from training metadata
-        s_min = meta.get("series_min", 0.0)
-        s_max = meta.get("series_max", 500.0)
-        scale = s_max - s_min if s_max - s_min > 1e-6 else 1.0
-
-        if not aqi_series:
-            # No live data — use midpoint of training range
-            midpoint = (s_min + s_max) / 2.0
-            aqi_series = [midpoint] * lookback
-
-        if len(aqi_series) < lookback:
-            pad = [float(aqi_series[0])] * (lookback - len(aqi_series))
-            aqi_series = pad + aqi_series
+        series = list(aqi_series)
+        if len(series) < LOOKBACK_DAYS:
+            pad_val = series[0] if series else 100.0
+            series = [pad_val] * (LOOKBACK_DAYS - len(series)) + series
         else:
-            aqi_series = aqi_series[-lookback:]
+            series = series[-LOOKBACK_DAYS:]
 
-        arr = np.array(aqi_series, dtype=np.float32)
-        arr_norm = (arr - s_min) / scale
+        arr = np.array(series, dtype=np.float32).reshape(-1, 1)
+        arr_scaled = scaler.transform(arr)                         # (30, 1)
 
-        X = arr_norm.reshape(1, lookback, 1)
-        raw_preds = np.array(model.predict(X, verbose=0)).flatten()
-        denorm = raw_preds * scale + s_min
-        return [float(v) for v in np.clip(denorm, 0.0, 500.0)]
+        X_aqi = arr_scaled.reshape(1, LOOKBACK_DAYS, 1)           # (1, 30, 1)
+        X_city = np.array([[city_id]], dtype=np.int32)             # (1, 1)
+
+        preds_scaled = model.predict([X_aqi, X_city], verbose=0)  # (1, 4)
+        preds = scaler.inverse_transform(preds_scaled.T).flatten() # (4,)
+        return [float(v) for v in np.clip(preds, 0.0, 500.0)]
 
     # ------------------------------------------------------------------
     # Trend-based fallback (no model needed)
@@ -130,58 +130,86 @@ class PredictionService:
         """Simple moving-average + drift heuristic when no LSTM model is available."""
         recent = aqi_series[-min(6, len(aqi_series)):]
         avg = sum(recent) / len(recent)
-        drift_per_hour = (recent[-1] - recent[0]) / max(len(recent), 1) * 0.5
+        drift_per_day = (recent[-1] - recent[0]) / max(len(recent), 1) * 0.5
 
         predictions: list[float] = []
-        for h in _FORECAST_HORIZONS:
-            pred = avg + drift_per_hour * h
-            pred += (h / 24.0) * 5.0
+        for days in _FORECAST_DAYS:
+            pred = avg + drift_per_day * days + (days / 7.0) * 5.0
             predictions.append(max(0.0, min(500.0, round(pred, 1))))
         return predictions
 
     # ------------------------------------------------------------------
-    # Per-city model loading
+    # Unified model loading (cached)
     # ------------------------------------------------------------------
 
-    def _try_load_city_model(self, city_key: str) -> tuple[Any | None, dict[str, Any] | None]:
-        """Try to load a per-city LSTM model from models/<city_key>.keras."""
-        if city_key in PredictionService._model_cache:
-            return PredictionService._model_cache[city_key], PredictionService._meta_cache.get(city_key)
+    def _try_load_unified_model(self) -> tuple[Any | None, Any | None, dict[str, Any] | None]:
+        """Load (and cache at class level) airwise_lstm.keras, scaler, and metadata."""
+        if PredictionService._model_loaded:
+            return PredictionService._model, PredictionService._scaler, PredictionService._metadata
 
-        model_path = _MODELS_DIR / f"{city_key}.keras"
-        meta_path = _MODELS_DIR / f"{city_key}.meta.json"
+        PredictionService._model_loaded = True  # mark attempted so we don't retry every request
 
-        if not model_path.exists():
-            logger.info("[Prediction] No model for city=%s at %s — using fallback", city_key, model_path)
-            return None, None
+        if not _UNIFIED_MODEL_PATH.exists():
+            logger.info("[Prediction] Unified model not found at %s — using trend fallback", _UNIFIED_MODEL_PATH)
+            return None, None, None
 
         try:
             try:
                 import tensorflow as tf  # type: ignore[import]
-                loaded = tf.keras.models.load_model(str(model_path))
+                PredictionService._model = tf.keras.models.load_model(str(_UNIFIED_MODEL_PATH))
             except ImportError:
                 import keras  # type: ignore[import]
-                loaded = keras.models.load_model(str(model_path))
-
-            PredictionService._model_cache[city_key] = loaded
-            logger.info("[Prediction] Loaded model for city=%s from %s", city_key, model_path)
+                PredictionService._model = keras.models.load_model(str(_UNIFIED_MODEL_PATH))
+            logger.info("[Prediction] Loaded unified model from %s", _UNIFIED_MODEL_PATH)
         except Exception as exc:
-            logger.warning("[Prediction] Failed to load model for city=%s: %s", city_key, exc)
-            return None, None
+            logger.warning("[Prediction] Failed to load unified model: %s", exc)
+            return None, None, None
 
-        meta: dict[str, Any] = {}
-        if meta_path.exists():
+        if _UNIFIED_SCALER_PATH.exists():
             try:
-                meta = json.loads(meta_path.read_text())
-                PredictionService._meta_cache[city_key] = meta
-            except Exception:
-                pass
+                from joblib import load as joblib_load  # type: ignore[import]
+                PredictionService._scaler = joblib_load(str(_UNIFIED_SCALER_PATH))
+            except Exception as exc:
+                logger.warning("[Prediction] Failed to load scaler: %s", exc)
 
-        return loaded, meta
+        if _UNIFIED_METADATA_PATH.exists():
+            try:
+                PredictionService._metadata = json.loads(_UNIFIED_METADATA_PATH.read_text(encoding="utf-8"))
+            except Exception as exc:
+                logger.warning("[Prediction] Failed to load metadata: %s", exc)
+
+        return PredictionService._model, PredictionService._scaler, PredictionService._metadata
 
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
+
+    def _to_daily_series(self, history: list[dict[str, Any]], lookback_days: int) -> list[float]:
+        """Resample hourly InfluxDB records to a daily-average AQI series."""
+        if not history:
+            return []
+        try:
+            import pandas as pd
+
+            rows = []
+            for r in history:
+                aqi_val = r.get("aqi")
+                ts = r.get("timestamp") or r.get("_time") or r.get("time")
+                if aqi_val is not None and ts is not None:
+                    rows.append({"ts": ts, "aqi": float(aqi_val)})
+
+            if not rows:
+                vals = [float(r["aqi"]) for r in history if r.get("aqi") is not None]
+                return vals[-lookback_days:]
+
+            df = pd.DataFrame(rows)
+            df["ts"] = pd.to_datetime(df["ts"])
+            daily = df.set_index("ts").resample("1D")["aqi"].mean().dropna()
+            return daily.tolist()[-lookback_days:]
+        except Exception as exc:
+            logger.warning("[Prediction] Failed to resample daily series: %s", exc)
+            vals = [float(r["aqi"]) for r in history if r.get("aqi") is not None]
+            return vals[-lookback_days:]
 
     def _fetch_history(self, city: str, lookback_hours: int) -> list[dict[str, Any]]:
         end_at = datetime.now(tz=UTC)

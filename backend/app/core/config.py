@@ -70,8 +70,8 @@ class Settings(BaseSettings):
 
     default_train_city: str = "Delhi"
     train_target_column: str = "aqi"
-    lookback_hours: int = Field(default=24, ge=6, le=240)
-    forecast_horizons: str = "4,6,12,24"
+    lookback_hours: int = Field(default=30, ge=6, le=240)
+    forecast_horizons: str = "1,2,3,7"
     lstm_model_path: str = "models/lstm_aqi.keras"
     lstm_models_dir: str = "models"
 

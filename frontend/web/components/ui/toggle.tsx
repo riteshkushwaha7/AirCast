@@ -4,17 +4,16 @@ export function Toggle({ checked }: { checked: boolean }) {
   return (
     <span
       className={cn(
-        "inline-flex h-6 w-11 items-center rounded-full p-1 transition-colors",
-        checked ? "bg-brand" : "bg-line",
+        "inline-flex h-7 w-12 items-center rounded-full p-1 transition-all",
+        checked ? "bg-gradient-to-r from-brand to-brand-accent shadow-soft" : "bg-white/60",
       )}
     >
       <span
         className={cn(
-          "h-4 w-4 rounded-full bg-white transition-transform",
+          "h-5 w-5 rounded-full bg-white shadow-soft transition-transform",
           checked ? "translate-x-5" : "translate-x-0",
         )}
       />
     </span>
   );
 }
-

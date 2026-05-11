@@ -27,19 +27,31 @@ class ForecastService:
         self.timeseries_repository = timeseries_repository
         self.live_aqi_adapter = live_aqi_adapter if live_aqi_adapter is not None else get_live_aqi_adapter()
         self.settings = get_settings()
-        self.forecast_horizons = self._parse_horizons(self.settings.forecast_horizons)
+        self.forecast_days = self._parse_horizons(self.settings.forecast_horizons)
+        self.forecast_horizon_hours = [day * 24 for day in self.forecast_days]
 
     def generate_current_summary(self, user_id: Any, location_id: Any, city: str | None = None) -> list[dict]:
-        """Return ForecastHorizonPoint dicts for the current forecast.
+        """Return ForecastHorizonPoint dicts prioritizing the unified model.
 
         Priority:
-        1. Recent WAQI forecast cached in InfluxDB (written within last 12 h)
-        2. ML model predictions already in InfluxDB
+        1. Unified LSTM predictions written by /predictions/run
+        2. Recent WAQI forecast cached in InfluxDB (written within last 12 h)
         3. Fetch fresh from WAQI, store in InfluxDB, return immediately
         """
         _ = (user_id, location_id)
         if city and self.timeseries_repository is not None:
-            # 1. WAQI forecast cached in InfluxDB
+            # 1. Unified model predictions
+            model_rows = self.timeseries_repository.read_latest_predictions_for_city(
+                city=city,
+                horizons=self.forecast_horizon_hours,
+                source="model",
+            )
+            if model_rows:
+                normalized = self._normalize_prediction_rows(model_rows)
+                if normalized:
+                    return normalized
+
+            # 2. WAQI forecast cached in InfluxDB
             waqi_rows = self.timeseries_repository.read_latest_predictions_for_city(
                 city=city,
                 horizons=_WAQI_HORIZONS,
@@ -50,17 +62,6 @@ class ForecastService:
                 normalized = self._normalize_prediction_rows(waqi_rows)
                 if normalized:
                     logger.info("[Forecast] Returning %d WAQI horizon(s) from InfluxDB for city=%s", len(normalized), city)
-                    return normalized
-
-            # 2. ML model predictions
-            model_rows = self.timeseries_repository.read_latest_predictions_for_city(
-                city=city,
-                horizons=self.forecast_horizons,
-                source="model",
-            )
-            if model_rows:
-                normalized = self._normalize_prediction_rows(model_rows)
-                if normalized:
                     return normalized
 
         # 3. Fetch fresh from WAQI
@@ -153,19 +154,19 @@ class ForecastService:
         avg_pm25 / model predictions if min values are unavailable.
         """
         if city and self.timeseries_repository is not None:
-            # Try WAQI forecast from InfluxDB first (next 3 days: 24 h, 48 h, 72 h)
+            # Prefer unified model predictions for best-window as well
             predictions = self.timeseries_repository.read_latest_predictions_for_city(
                 city=city,
-                horizons=_WAQI_HORIZONS,
-                source="waqi",
-                lookback_hours=12,
+                horizons=self.forecast_horizon_hours,
+                source="model",
             )
             if not predictions:
-                # Fall back to model predictions
+                # Fall back to recent WAQI forecast (next ~3 days)
                 predictions = self.timeseries_repository.read_latest_predictions_for_city(
                     city=city,
-                    horizons=[4, 6, 12, 24],
-                    source="model",
+                    horizons=_WAQI_HORIZONS,
+                    source="waqi",
+                    lookback_hours=12,
                 )
             if predictions:
                 return self._predictions_to_best_window(predictions)
@@ -217,18 +218,19 @@ class ForecastService:
 
     @staticmethod
     def _parse_horizons(value: str) -> list[int]:
+        """Parse comma-separated day offsets (e.g. "1,2,3,7") into ints."""
         parsed: list[int] = []
         for item in value.split(","):
             text = item.strip()
             if not text:
                 continue
             try:
-                horizon = int(text)
+                day_offset = int(text)
             except ValueError:
                 continue
-            if horizon > 0:
-                parsed.append(horizon)
-        return parsed or [4, 6, 12, 24]
+            if day_offset > 0:
+                parsed.append(day_offset)
+        return parsed or [1, 2, 3, 7]
 
     @staticmethod
     def _normalize_prediction_rows(rows: list[dict[str, Any]]) -> list[dict]:

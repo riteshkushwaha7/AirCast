@@ -6,8 +6,10 @@ export function SectionCard({ className, ...props }: HTMLAttributes<HTMLDivEleme
   return (
     <section
       {...props}
-      className={cn("rounded-2xl border border-line bg-white p-5 shadow-soft", className)}
+      className={cn(
+        "rounded-3xl border border-white/50 bg-card-aurora p-6 shadow-glow backdrop-blur-xl",
+        className,
+      )}
     />
   );
 }
-

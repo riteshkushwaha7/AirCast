@@ -13,9 +13,11 @@ export function PrimaryButton({
     <Pressable
       onPress={onPress}
       disabled={disabled}
-      className={`h-11 items-center justify-center rounded-xl ${disabled ? "bg-line" : "bg-brand"}`}
+      className={`h-12 items-center justify-center rounded-3xl px-5 ${
+        disabled ? "bg-white/40" : "bg-gradient-to-r from-brand to-brand-accent"
+      }`}
     >
-      <Text className={`text-sm font-semibold ${disabled ? "text-ink-soft" : "text-white"}`}>{label}</Text>
+      <Text className={`text-base font-semibold ${disabled ? "text-ink-soft" : "text-white"}`}>{label}</Text>
     </Pressable>
   );
 }

@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 
 import { routes } from "@/lib/constants/routes";
 
@@ -17,17 +17,19 @@ export function TopNav({
   ];
 
   return (
-    <header className="hidden items-center justify-between border-b border-line pb-4 md:flex">
-      <Link href={routes.dashboard} className="text-lg font-semibold text-ink">
-        My AirCast
+    <header className="hidden items-center justify-between rounded-3xl border border-white/40 bg-card-aurora px-5 py-4 shadow-soft backdrop-blur-lg md:flex">
+      <Link href={routes.dashboard} className="font-serif text-2xl text-ink">
+        AirWise
       </Link>
-      <nav className="flex items-center gap-1">
+      <nav className="flex items-center gap-2">
         {items.map((item) => (
           <Link
             key={item.href}
             href={item.href}
-            className={`rounded-lg px-3 py-2 text-sm transition-colors ${
-              current === item.href ? "bg-surface-muted text-ink" : "text-ink-soft hover:text-ink"
+            className={`rounded-2xl px-4 py-2 text-sm font-semibold transition-all ${
+              current === item.href
+                ? "bg-pill-glow text-ink shadow-soft"
+                : "text-ink-soft hover:text-ink"
             }`}
           >
             {item.label}
@@ -37,5 +39,3 @@ export function TopNav({
     </header>
   );
 }
-
-

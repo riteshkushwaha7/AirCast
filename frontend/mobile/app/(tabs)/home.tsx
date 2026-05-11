@@ -54,7 +54,7 @@ export default function HomeScreen() {
     );
   }
 
-  const forecastQuick = data.forecast.filter((point) => [4, 12, 24].includes(point.horizon_hours));
+  const forecastQuick = data.forecast.filter((point) => [24, 48, 72].includes(point.horizon_hours));
   const aqiDisplay = data.current.aqi > 0 ? Math.round(data.current.aqi) : "—";
 
   return (

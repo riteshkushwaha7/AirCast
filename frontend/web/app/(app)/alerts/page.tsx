@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 
@@ -37,10 +37,10 @@ export default function AlertsPage() {
       <PageHeader title="Alerts & settings" subtitle="Choose when and how My AirCast should notify you." />
 
       <NotificationPreferenceCard title="Master alerts" description="Turn all notifications on or off." enabled={prefs.enabled} />
-      <NotificationPreferenceCard title="4h alert" description="Notify when near-term AQI is concerning." enabled={prefs.alert_4h} />
-      <NotificationPreferenceCard title="6h alert" description="Additional reminder for worsening conditions." enabled={prefs.alert_6h} />
-      <NotificationPreferenceCard title="12h alert" description="Plan ahead for the day." enabled={prefs.alert_12h} />
-      <NotificationPreferenceCard title="24h alert" description="Tomorrow planning alert." enabled={prefs.alert_24h} />
+      <NotificationPreferenceCard title="Day 1 alert (24h)" description="Notify when next-day AQI is concerning." enabled={prefs.alert_4h} />
+      <NotificationPreferenceCard title="Day 2 alert (48h)" description="Extra reminder for the day after tomorrow." enabled={prefs.alert_6h} />
+      <NotificationPreferenceCard title="Day 3 alert (72h)" description="Plan ahead for the upcoming weekend." enabled={prefs.alert_12h} />
+      <NotificationPreferenceCard title="Day 7 alert (168h)" description="Long-range caution heading into the week." enabled={prefs.alert_24h} />
       <NotificationPreferenceCard title="Daily summary" description="Daily morning AQI snapshot." enabled={prefs.daily_summary_enabled} />
       <NotificationPreferenceCard title="Best time alert" description="Notifies cleaner outdoor windows." enabled={prefs.best_time_alert_enabled} />
       <NotificationPreferenceCard title="Mask recommendation" description="Prompt when mask use is advised." enabled={prefs.notify_for_mask_recommendation} />

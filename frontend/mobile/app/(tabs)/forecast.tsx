@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 
-import { AQIBadge, ForecastCard } from "../../components/cards";
+import { AQIBadge, ForecastCard, formatHorizonLabel } from "../../components/cards";
 import { MiniTrendChart } from "../../components/charts";
 import { AppHeader } from "../../components/layout";
 import { EmptyState, ErrorState, LoadingState, SectionContainer } from "../../components/ui";
@@ -85,7 +85,7 @@ export default function ForecastScreen() {
       ) : null}
 
       <SectionContainer>
-        <Text className="mb-3 text-sm font-semibold text-ink">Hourly windows</Text>
+        <Text className="mb-3 text-sm font-semibold text-ink">Daily outlook</Text>
         <View className="flex-row flex-wrap gap-2">
           {forecast.map((point) => (
             <ForecastCard key={point.horizon_hours} point={point} />
@@ -94,13 +94,13 @@ export default function ForecastScreen() {
       </SectionContainer>
 
       <SectionContainer className="mt-3">
-        <Text className="mb-3 text-sm font-semibold text-ink">Daily outlook</Text>
+        <Text className="mb-3 text-sm font-semibold text-ink">Extended horizons</Text>
         {forecast.map((point) => {
           const meta = AQI_CATEGORY_META[point.category];
           return (
             <View key={point.horizon_hours} className="mb-2 flex-row items-center justify-between rounded-xl border border-line bg-surface-muted px-3 py-3">
               <View className="flex-1 mr-3">
-                <Text className="text-sm font-medium text-ink">+{point.horizon_hours}h</Text>
+                <Text className="text-sm font-medium text-ink">{formatHorizonLabel(point.horizon_hours)}</Text>
                 <Text className="mt-0.5 text-xs text-ink-soft">{meta?.hint ?? ""}</Text>
               </View>
               <View className="items-end gap-1">

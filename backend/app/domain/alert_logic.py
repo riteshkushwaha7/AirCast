@@ -7,6 +7,14 @@ from app.domain.quiet_hours import is_quiet_hours, should_block_for_quiet_hours
 from app.utils.enums import AQICategory, NotificationType
 
 
+_ALERT_HORIZON_MAP: dict[int, str] = {
+    24: "alert_4h",   # legacy field now mapped to +1 day alert
+    48: "alert_6h",   # legacy field now mapped to +2 day alert
+    72: "alert_12h",  # legacy field now mapped to +3 day alert
+    168: "alert_24h",  # legacy field now mapped to +7 day alert
+}
+
+
 @dataclass
 class AlertDecision:
     should_send: bool
@@ -32,10 +40,7 @@ def evaluate_alert_decisions(
 ) -> list[AlertDecision]:
     now_dt = (now or datetime.now(tz=UTC)).astimezone(UTC)
     horizon_flags = {
-        4: bool(preferences.alert_4h),
-        6: bool(preferences.alert_6h),
-        12: bool(preferences.alert_12h),
-        24: bool(preferences.alert_24h),
+        hours: bool(getattr(preferences, attr_name, False)) for hours, attr_name in _ALERT_HORIZON_MAP.items()
     }
     in_quiet_hours = is_quiet_hours(now_dt, preferences.quiet_hours_start, preferences.quiet_hours_end)
     decisions: list[AlertDecision] = []
@@ -126,11 +131,12 @@ def _threshold_cross_decision(
             continue
         predicted = float(point.get("predicted_aqi", 0))
         if predicted >= threshold:
+            horizon_label = _format_horizon_label(horizon)
             return AlertDecision(
                 should_send=True,
                 alert_type=NotificationType.THRESHOLD_CROSSED,
                 title="AQI Threshold Alert",
-                body=f"AQI may reach {int(predicted)} in {horizon}h. Plan limited outdoor exposure.",
+                body=f"AQI may reach {int(predicted)} in {horizon_label}. Plan limited outdoor exposure.",
                 target_horizon=horizon,
                 priority="high",
                 payload={"predicted_aqi": predicted, "threshold_aqi": threshold, "horizon_hours": horizon},
@@ -160,11 +166,12 @@ def _category_worsened_decision(current_category: AQICategory, forecast_horizons
     if category_rank(peak_category) < category_rank(AQICategory.UNHEALTHY):
         return None
 
+    horizon_label = _format_horizon_label(peak_horizon) if peak_horizon is not None else "the next few days"
     return AlertDecision(
         should_send=True,
         alert_type=NotificationType.CATEGORY_WORSENED,
         title="Air Quality May Worsen",
-        body=f"Forecast suggests {peak_category.value.replace('_', ' ')} levels within {peak_horizon}h.",
+        body=f"Forecast suggests {peak_category.value.replace('_', ' ')} levels within {horizon_label}.",
         target_horizon=peak_horizon,
         priority="normal",
         payload={"predicted_category": peak_category.value, "target_horizon": peak_horizon},
@@ -230,3 +237,14 @@ def _apply_quiet_hour_policy(decisions: list[AlertDecision], in_quiet_hours: boo
         else:
             output.append(decision)
     return output
+
+
+def _format_horizon_label(hours: int | None) -> str:
+    if hours is None or hours <= 0:
+        return "the coming hours"
+    if hours % 24 == 0:
+        days = hours // 24
+        if days == 1:
+            return "1 day"
+        return f"{days} days"
+    return f"{hours}h"

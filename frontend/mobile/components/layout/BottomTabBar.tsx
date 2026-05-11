@@ -12,7 +12,7 @@ const labelMap: Record<string, string> = {
 
 export function BottomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   return (
-    <View className="mx-3 mb-3 flex-row rounded-2xl border border-line bg-white px-1 py-1">
+    <View className="mx-3 mb-3 flex-row rounded-3xl border border-white/30 bg-white/80 px-1 py-1" style={{ shadowColor: "#0f1d5e", shadowOpacity: 0.15, shadowRadius: 18, elevation: 8 }}>
       {state.routes.map((route, index) => {
         const isFocused = state.index === index;
         const onPress = () => {
@@ -33,9 +33,9 @@ export function BottomTabBar({ state, descriptors, navigation }: BottomTabBarPro
             accessibilityRole="button"
             accessibilityState={isFocused ? { selected: true } : {}}
             onPress={onPress}
-            className={`flex-1 items-center rounded-xl px-2 py-2 ${isFocused ? "bg-surface-muted" : "bg-transparent"}`}
+            className={`flex-1 items-center rounded-2xl px-2 py-2 ${isFocused ? "bg-brand/10" : "bg-transparent"}`}
           >
-            <Text className={`text-xs font-medium ${isFocused ? "text-ink" : "text-ink-soft"}`}>
+            <Text className={`text-xs font-semibold ${isFocused ? "text-ink" : "text-ink-soft"}`}>
               {labelMap[route.name] ?? descriptors[route.key]?.options.title ?? route.name}
             </Text>
           </Pressable>
