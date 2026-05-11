@@ -19,7 +19,7 @@ export function TopNav({
   return (
     <header className="hidden items-center justify-between rounded-3xl border border-white/40 bg-card-aurora px-5 py-4 shadow-soft backdrop-blur-lg md:flex">
       <Link href={routes.dashboard} className="font-serif text-2xl text-ink">
-        AirWise
+        AirCast
       </Link>
       <nav className="flex items-center gap-2">
         {items.map((item) => (
