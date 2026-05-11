@@ -1,0 +1,17 @@
+{
+  "city": "Patna",
+  "station_idx": "@8674",
+  "trained_at": "2026-05-11T11:28:05.632717+00:00",
+  "series_length": 144,
+  "lookback_hours": 24,
+  "forecast_horizons": [
+    4,
+    6,
+    12,
+    24
+  ],
+  "series_min": 63.01454182305453,
+  "series_max": 151.7309954358208,
+  "val_loss": 0.0032110274769365788,
+  "val_mae": 0.044314898550510406
+}

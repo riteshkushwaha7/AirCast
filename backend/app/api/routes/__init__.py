@@ -7,6 +7,7 @@ from app.api.routes import (
     locations,
     notifications,
     planner,
+    predictions,
     profiles,
     recommendations,
     users,
@@ -22,6 +23,7 @@ __all__ = [
     "aqi",
     "forecasts",
     "planner",
+    "predictions",
     "recommendations",
     "admin",
 ]

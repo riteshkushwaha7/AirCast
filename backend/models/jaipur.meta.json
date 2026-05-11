@@ -1,0 +1,17 @@
+{
+  "city": "Jaipur",
+  "station_idx": "@12476",
+  "trained_at": "2026-05-11T11:27:21.692407+00:00",
+  "series_length": 120,
+  "lookback_hours": 24,
+  "forecast_horizons": [
+    4,
+    6,
+    12,
+    24
+  ],
+  "series_min": 6.9836305535441685,
+  "series_max": 30.896812847483975,
+  "val_loss": 0.10889280587434769,
+  "val_mae": 0.2823188006877899
+}

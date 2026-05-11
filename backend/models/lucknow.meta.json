@@ -1,0 +1,17 @@
+{
+  "city": "Lucknow",
+  "station_idx": "@3845",
+  "trained_at": "2026-05-11T11:27:36.195038+00:00",
+  "series_length": 144,
+  "lookback_hours": 24,
+  "forecast_horizons": [
+    4,
+    6,
+    12,
+    24
+  ],
+  "series_min": 102.22633372948678,
+  "series_max": 161.7243829922611,
+  "val_loss": 0.014925718307495117,
+  "val_mae": 0.1031227558851242
+}

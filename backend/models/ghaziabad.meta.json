@@ -1,0 +1,17 @@
+{
+  "city": "Ghaziabad",
+  "station_idx": "@12482",
+  "trained_at": "2026-05-11T11:26:20.423757+00:00",
+  "series_length": 120,
+  "lookback_hours": 24,
+  "forecast_horizons": [
+    4,
+    6,
+    12,
+    24
+  ],
+  "series_min": 15.49235827177077,
+  "series_max": 51.19241674505065,
+  "val_loss": 0.011687126941978931,
+  "val_mae": 0.08293464779853821
+}

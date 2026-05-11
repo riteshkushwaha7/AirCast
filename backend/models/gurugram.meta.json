@@ -1,0 +1,17 @@
+{
+  "city": "Gurugram",
+  "station_idx": "@12460",
+  "trained_at": "2026-05-11T11:26:09.814435+00:00",
+  "series_length": 144,
+  "lookback_hours": 24,
+  "forecast_horizons": [
+    4,
+    6,
+    12,
+    24
+  ],
+  "series_min": 73.72154186413302,
+  "series_max": 143.87227673834983,
+  "val_loss": 0.05156727507710457,
+  "val_mae": 0.17837898433208466
+}

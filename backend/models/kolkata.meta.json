@@ -1,0 +1,17 @@
+{
+  "city": "Kolkata",
+  "station_idx": "@12474",
+  "trained_at": "2026-05-11T11:27:06.940555+00:00",
+  "series_length": 136,
+  "lookback_hours": 24,
+  "forecast_horizons": [
+    4,
+    6,
+    12,
+    24
+  ],
+  "series_min": 6.687978983722514,
+  "series_max": 55.925188229084135,
+  "val_loss": 0.014328370802104473,
+  "val_mae": 0.0990111455321312
+}

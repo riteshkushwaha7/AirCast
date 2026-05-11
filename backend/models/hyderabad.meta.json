@@ -1,0 +1,17 @@
+{
+  "city": "Hyderabad",
+  "station_idx": "@11349",
+  "trained_at": "2026-05-11T11:27:01.534101+00:00",
+  "series_length": 136,
+  "lookback_hours": 24,
+  "forecast_horizons": [
+    4,
+    6,
+    12,
+    24
+  ],
+  "series_min": 40.01616787221213,
+  "series_max": 102.16164187388344,
+  "val_loss": 0.10793564468622208,
+  "val_mae": 0.29354915022850037
+}

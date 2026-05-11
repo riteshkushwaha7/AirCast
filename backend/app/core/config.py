@@ -73,6 +73,7 @@ class Settings(BaseSettings):
     lookback_hours: int = Field(default=24, ge=6, le=240)
     forecast_horizons: str = "4,6,12,24"
     lstm_model_path: str = "models/lstm_aqi.keras"
+    lstm_models_dir: str = "models"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 

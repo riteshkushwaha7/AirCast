@@ -1,0 +1,17 @@
+{
+  "city": "Ludhiana",
+  "station_idx": "@11272",
+  "trained_at": "2026-05-11T11:28:27.777022+00:00",
+  "series_length": 144,
+  "lookback_hours": 24,
+  "forecast_horizons": [
+    4,
+    6,
+    12,
+    24
+  ],
+  "series_min": 125.46268189489801,
+  "series_max": 160.1594331777687,
+  "val_loss": 0.05481228232383728,
+  "val_mae": 0.16417913138866425
+}
