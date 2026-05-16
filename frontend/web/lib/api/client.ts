@@ -15,6 +15,7 @@ export class ApiError extends Error {
 interface RequestOptions extends RequestInit {
   headers?: HeadersInit;
   token?: string;
+  timeout?: number;
 }
 
 export async function apiFetch<T>(path: string, options: RequestOptions = {}): Promise<T> {
@@ -39,7 +40,30 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
   // Normalize incoming path and ensure it maps under /api so Vercel rewrites
   // proxy to the backend host.
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-  const url = `${API_PREFIX}${normalizedPath}`;
+
+  // On the client, use relative /api so the browser talks to Vercel (HTTPS).
+  // On the server (Node), build an absolute URL to our own deployment so
+  // fetch() can resolve it and Next/Vercel will still apply rewrites.
+  let url: string;
+  if (typeof window === 'undefined') {
+    const vercelUrl = process.env.VERCEL_URL;
+    if (vercelUrl) {
+      // Vercel provides VERCEL_URL at runtime (e.g. my-app.vercel.app)
+      url = `https://${vercelUrl}${API_PREFIX}${normalizedPath}`;
+    } else {
+      // Local development fallback
+      const host = process.env.HOST || 'localhost';
+      const port = process.env.PORT || '3000';
+      url = `http://${host}:${port}${API_PREFIX}${normalizedPath}`;
+    }
+  } else {
+    url = `${API_PREFIX}${normalizedPath}`;
+  }
+
+  // Timeout support using AbortController
+  const controller = new AbortController();
+  const timeout = (rest as any)?.timeout ?? 10000; // default 10s
+  const timer = setTimeout(() => controller.abort(), timeout);
 
   const response = await fetch(url, {
     ...rest,
@@ -49,7 +73,10 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
       ...(headers ?? {}),
     },
     cache: "no-store",
+    signal: controller.signal,
   });
+
+  clearTimeout(timer);
 
   if (!response.ok) {
     let message = `Request failed: ${response.status}`;
